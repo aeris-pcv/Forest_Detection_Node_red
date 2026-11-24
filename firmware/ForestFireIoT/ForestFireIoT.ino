@@ -282,7 +282,24 @@ void logRow(const char* event) {
   snprintf(line, sizeof(line), "%s,%s,%s,%s,%s,%d,%d,%d,%d",
            ts, event, stateName(sys), tempField, humidityField,
            flameAnalog, flame, motion, servoAngle);
-  Serial.println(line);
+  char tempDisplay[24], humidityDisplay[24];
+  if (dhtOk) {
+    snprintf(tempDisplay, sizeof(tempDisplay), "%.1f C", temperature);
+    snprintf(humidityDisplay, sizeof(humidityDisplay), "%.0f %%", humidity);
+  } else {
+    strcpy(tempDisplay, "unavailable");
+    strcpy(humidityDisplay, "unavailable");
+  }
+  // Human-readable Serial Monitor output; keep the SD file as machine-readable CSV.
+  Serial.printf("Time: %s | Event: %s | State: %s | Temperature: %s | "
+                "Humidity: %s | Flame AO: %d | Flame: %s | "
+                "PIR motion: %s | Servo: %d deg | Buzzer: %s | Mode: %s\n",
+                ts, event, stateName(sys),
+                tempDisplay, humidityDisplay,
+                flameAnalog, flame ? "DETECTED" : "clear",
+                motion ? "detected" : "none", servoAngle,
+                muted ? "muted" : "armed",
+                batteryMode ? "battery saver" : "normal");
 #if USE_SD
   if (sdOk) {
     File f = SD.open(LOG_FILE, FILE_APPEND);
