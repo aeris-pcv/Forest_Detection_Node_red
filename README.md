@@ -6,6 +6,8 @@ For complete Windows instructions, follow [`docs/RUN_STEP_BY_STEP.md`](docs/RUN_
 
 If the board logs `ALARM` with `flame_ao=0` or the DHT readings are unavailable, upload [`firmware/SensorWiringTest/SensorWiringTest.ino`](firmware/SensorWiringTest/SensorWiringTest.ino). It prints raw sensor readings without starting Wi-Fi or actuators.
 
+To choose a flame threshold for your actual module and lighting, upload [`firmware/FlameCalibration/FlameCalibration.ino`](firmware/FlameCalibration/FlameCalibration.ino). Use Serial Monitor at 115200 baud, send `b` in normal lighting, then `f` at a supervised test source. Copy the suggested value into `FLAME_ANALOG_MAX` in the main firmware only after both ranges are clearly separated.
+
 ## Quick start
 
 1. Install Docker Desktop. Copy `.env.example` to `.env` and set a strong InfluxDB password and token. Run `docker compose up --build -d` from this directory.
