@@ -4,6 +4,8 @@ Project 2 extension of the supplied ESP32 forest fire detector. The same telemet
 
 For complete Windows instructions, follow [`docs/RUN_STEP_BY_STEP.md`](docs/RUN_STEP_BY_STEP.md).
 
+If the board logs `ALARM` with `flame_ao=0` or the DHT readings are unavailable, upload [`firmware/SensorWiringTest/SensorWiringTest.ino`](firmware/SensorWiringTest/SensorWiringTest.ino). It prints raw sensor readings without starting Wi-Fi or actuators.
+
 ## Quick start
 
 1. Install Docker Desktop. Copy `.env.example` to `.env` and set a strong InfluxDB password and token. Run `docker compose up --build -d` from this directory.

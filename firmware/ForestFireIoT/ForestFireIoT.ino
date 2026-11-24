@@ -107,6 +107,7 @@ WiFiClient wifiClient;
 PubSubClient mqtt(wifiClient);
 unsigned long lastMqttAttempt = 0, lastTelemetry = 0;
 bool remoteTest = false;
+bool wifiStarted = false, ntpConfigured = false;
 
 // ---------------- Finite state machine ----------------
 enum SysState { SYS_OFF, SYS_SAFE, SYS_WARNING, SYS_ALARM };
@@ -209,14 +210,19 @@ BtnEvent pollButton() {
 bool syncTime() {
   Serial.print("Connecting to WiFi: ");
   Serial.println(WIFI_SSID);
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(WIFI_SSID, WIFI_PASS);
+  if (!wifiStarted) {
+    WiFi.mode(WIFI_STA);
+    WiFi.setAutoReconnect(true);
+    WiFi.begin(WIFI_SSID, WIFI_PASS);
+    wifiStarted = true;
+  }
   unsigned long t0 = millis();
   while (WiFi.status() != WL_CONNECTED && millis() - t0 < 10000) delay(250);
 
   if (WiFi.status() == WL_CONNECTED) {
     Serial.println("WiFi connected");
     configTime(GMT_OFFSET_SEC, DST_OFFSET_SEC, "pool.ntp.org", "time.google.com");
+    ntpConfigured = true;
     struct tm ti;
     if (getLocalTime(&ti, 8000)) {
       timeValid = true;
@@ -264,9 +270,17 @@ void initSD() {
 void logRow(const char* event) {
   char ts[24];
   timestamp(ts, sizeof(ts));
+  char tempField[16], humidityField[16];
+  if (dhtOk) {
+    snprintf(tempField, sizeof(tempField), "%.1f", temperature);
+    snprintf(humidityField, sizeof(humidityField), "%.0f", humidity);
+  } else {
+    strcpy(tempField, "NA");
+    strcpy(humidityField, "NA");
+  }
   char line[160];
-  snprintf(line, sizeof(line), "%s,%s,%s,%.1f,%.0f,%d,%d,%d,%d",
-           ts, event, stateName(sys), temperature, humidity,
+  snprintf(line, sizeof(line), "%s,%s,%s,%s,%s,%d,%d,%d,%d",
+           ts, event, stateName(sys), tempField, humidityField,
            flameAnalog, flame, motion, servoAngle);
   Serial.println(line);
 #if USE_SD
@@ -291,14 +305,19 @@ void onMqttMessage(char* topic, byte* payload, unsigned int length) {
   else if (strcmp(command, "TEST_OFF") == 0) { remoteTest = false; logRow("REMOTE_TEST_OFF"); }
 }
 
-// Attempt connection at most once every five seconds; never stall sensing.
+// Let the ESP32 Wi-Fi stack reconnect automatically. Calling reconnect()
+// while STA is already connecting produces "sta is connecting" errors.
 void serviceMqtt() {
   if (WiFi.status() != WL_CONNECTED) {
-    if (millis() - lastMqttAttempt >= MQTT_RETRY_MS) {
-      lastMqttAttempt = millis();
-      WiFi.reconnect();
-    }
     return;
+  }
+  if (!ntpConfigured) {
+    configTime(GMT_OFFSET_SEC, DST_OFFSET_SEC, "pool.ntp.org", "time.google.com");
+    ntpConfigured = true;
+  }
+  if (!timeValid && time(nullptr) > 1700000000) {
+    timeValid = true;
+    lastSyncMs = millis();
   }
   if (!mqtt.connected()) {
     if (millis() - lastMqttAttempt >= MQTT_RETRY_MS) {
