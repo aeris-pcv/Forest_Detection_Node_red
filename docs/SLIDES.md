@@ -10,11 +10,11 @@ Nearby flame and heat need site-specific sensing. Goals: detect SAFE/WARNING/ALA
 
 ## 3 Hardware and circuit
 
-Insert the supplied Fritzing schematic and a real hardware photo. Label DHT11, KY-026, PIR, TFT, RGB LED, buzzer, servo, SD, and interrupt button. Explain that the ESP32 continues sensing and actuating if the network fails.
+Insert the current `hardware_wiring.svg` and a real hardware photo. Label DHT11, KY-026, PIR, RGB LED, buzzer, servo, SD, and interrupt button. Explain that the screen was removed and the ESP32 continues sensing and actuating if the network fails.
 
 ## 4 Architecture and protocol
 
-Insert the Mermaid architecture from `REPORT.md` as an image. ESP32 and twin send JSON over local Wi-Fi/MQTT to Mosquitto; Node-RED provides fog analytics and admin control; HTTPS publishes numeric fields to the public ThingSpeak channel. Explain five-second telemetry and 16-second cloud rate limit.
+Insert the Mermaid architecture from `REPORT.md` as an image. ESP32 and twin send JSON over local Wi-Fi/MQTT to Mosquitto; Node-RED writes InfluxDB history, sends LINE state-change alerts, provides admin control, and publishes numeric fields to the public ThingSpeak channel. Explain five-second telemetry and 16-second cloud rate limit.
 
 ## 5 Decision logic
 
@@ -22,7 +22,7 @@ Insert the FSM diagram. WARNING: temperature at least 38 C, or at least 33 C wit
 
 ## 6 Dashboards and digital twin
 
-Insert actual screenshots of Node-RED's private dashboard and ThingSpeak's public channel. Show source selection, recommendation, freshness, and control buttons. Explain that the twin uses the same schema and thresholds for ESP32-free evaluation.
+Insert actual screenshots of Node-RED's private dashboard, InfluxDB history, a LINE alert, and ThingSpeak's public channel. Show source selection, recommendation, freshness, and control buttons. Explain that the twin uses the same schema and thresholds for ESP32-free evaluation.
 
 ## 7 Scenario results and demo
 

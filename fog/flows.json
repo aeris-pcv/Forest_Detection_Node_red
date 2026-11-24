@@ -114,7 +114,9 @@
     "wires": [
       [
         "split",
-        "history"
+        "history",
+        "influx",
+        "alert_decision"
       ]
     ],
     "func": "const p=msg.payload;\nif (!p || ![\"esp32\",\"twin\"].includes(p.source) ||\n    ![\"OFF\",\"SAFE\",\"WARNING\",\"ALARM\"].includes(p.state) ||\n    typeof p.flame!==\"boolean\" || typeof p.motion!==\"boolean\" ||\n    (p.temperature_c!==null && typeof p.temperature_c!==\"number\") ||\n    (p.humidity!==null && typeof p.humidity!==\"number\")) return null;\nconst s=flow.get(\"selectedSource\") || \"twin\";\nif (p.source!==s) return null;\np.received_at=Date.now();\nflow.set(\"latest\",p);\nmsg.payload=p;\nreturn msg;",
@@ -290,6 +292,130 @@
     "tosidebar": true,
     "complete": "payload",
     "targetType": "msg"
+  },
+  {
+    "id": "influx",
+    "type": "function",
+    "z": "fire",
+    "name": "Build InfluxDB line protocol",
+    "x": 690,
+    "y": 340,
+    "wires": [
+      [
+        "influx_http"
+      ]
+    ],
+    "outputs": 1,
+    "noerr": 0,
+    "func": "const p=msg.payload, token=env.get(\"INFLUX_TOKEN\");\nif (!token) { node.warn(\"INFLUX_TOKEN is not configured\"); return null; }\nconst org=env.get(\"INFLUX_ORG\")||\"forestfire\", bucket=env.get(\"INFLUX_BUCKET\")||\"telemetry\";\nconst fields=[];\nfor (const [key,value] of Object.entries({temperature_c:p.temperature_c,humidity:p.humidity}))\n  if (typeof value===\"number\" && Number.isFinite(value)) fields.push(key+\"=\"+value);\nfields.push(\"flame_ao=\"+Math.round(p.flame_ao)+\"i\");\nfields.push(\"flame=\"+p.flame,\"motion=\"+p.motion,\"muted=\"+p.muted);\nfields.push(\"servo_deg=\"+Math.round(p.servo_deg)+\"i\");\nfields.push(\"state_code=\"+({OFF:0,SAFE:1,WARNING:2,ALARM:3}[p.state])+\"i\");\nmsg.method=\"POST\";\nmsg.url=\"http://influxdb:8086/api/v2/write?org=\"+encodeURIComponent(org)+\"&bucket=\"+encodeURIComponent(bucket)+\"&precision=ns\";\nmsg.headers={\"Authorization\":\"Token \"+token,\"Content-Type\":\"text/plain; charset=utf-8\"};\nmsg.payload=\"forest_fire,source=\"+p.source+\" \"+fields.join(\",\");\nreturn msg;"
+  },
+  {
+    "id": "influx_http",
+    "type": "http request",
+    "z": "fire",
+    "name": "Write telemetry to InfluxDB",
+    "x": 960,
+    "y": 340,
+    "wires": [
+      [
+        "influx_result"
+      ]
+    ],
+    "method": "use",
+    "ret": "txt",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": []
+  },
+  {
+    "id": "influx_result",
+    "type": "function",
+    "z": "fire",
+    "name": "Check InfluxDB result",
+    "x": 1200,
+    "y": 340,
+    "wires": [
+      []
+    ],
+    "outputs": 1,
+    "noerr": 0,
+    "func": "if(msg.statusCode!==204) node.warn(\"InfluxDB write failed: HTTP \"+msg.statusCode+\" \"+String(msg.payload).slice(0,200));return null;"
+  },
+  {
+    "id": "alert_decision",
+    "type": "function",
+    "z": "fire",
+    "name": "State-change LINE alert",
+    "x": 700,
+    "y": 390,
+    "wires": [
+      [
+        "line_build"
+      ]
+    ],
+    "outputs": 1,
+    "noerr": 0,
+    "func": "const p=msg.payload, key=\"lastAlertState_\"+p.source;\nconst previous=flow.get(key);\nif (previous===p.state) return null;\nflow.set(key,p.state);\nif (p.state===\"OFF\" || (previous===undefined && p.state===\"SAFE\")) return null;\nconst details=\"Temperature \"+(p.temperature_c===null?\"unavailable\":p.temperature_c+\" C\")+\n  \", humidity \"+(p.humidity===null?\"unavailable\":p.humidity+\"%\")+\n  \", flame \"+(p.flame?\"detected\":\"clear\")+\".\";\nmsg.payload=\"Forest Fire \"+p.source.toUpperCase()+\": \"+p.state+\". \"+details+\n  (p.state===\"ALARM\"?\" Inspect the site immediately.\":\n   p.state===\"WARNING\"?\" Check heat and dry conditions.\":\" Conditions recovered; continue monitoring.\");\nreturn msg;"
+  },
+  {
+    "id": "line_build",
+    "type": "function",
+    "z": "fire",
+    "name": "Build LINE push request",
+    "x": 940,
+    "y": 390,
+    "wires": [
+      [
+        "line_http"
+      ]
+    ],
+    "outputs": 1,
+    "noerr": 0,
+    "func": "const token=env.get(\"LINE_CHANNEL_ACCESS_TOKEN\"), to=env.get(\"LINE_USER_ID\");\nif (!token || !to) { node.warn(\"LINE credentials are not configured\"); return null; }\nmsg.method=\"POST\";msg.url=\"https://api.line.me/v2/bot/message/push\";\nmsg.headers={\"Authorization\":\"Bearer \"+token,\"Content-Type\":\"application/json\"};\nmsg.payload={to:to,messages:[{type:\"text\",text:String(msg.payload).slice(0,5000)}]};\nreturn msg;"
+  },
+  {
+    "id": "line_http",
+    "type": "http request",
+    "z": "fire",
+    "name": "Push LINE alert",
+    "x": 1140,
+    "y": 390,
+    "wires": [
+      [
+        "line_result"
+      ]
+    ],
+    "method": "use",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": []
+  },
+  {
+    "id": "line_result",
+    "type": "function",
+    "z": "fire",
+    "name": "Check LINE response",
+    "x": 1330,
+    "y": 390,
+    "wires": [
+      []
+    ],
+    "outputs": 1,
+    "noerr": 0,
+    "func": "if(msg.statusCode!==200) node.warn(\"LINE push failed: HTTP \"+msg.statusCode+\" \"+JSON.stringify(msg.payload).slice(0,200));return null;"
   },
   {
     "id": "mute",

@@ -2,6 +2,11 @@
 .env
 .env.*
 !.env.example
+line.env
+line.env.*
+!line.env.example
+*.secret
+secrets/
 firmware/**/secrets.h
 !firmware/**/secrets.example.h
 

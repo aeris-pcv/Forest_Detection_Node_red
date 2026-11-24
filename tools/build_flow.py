@@ -30,7 +30,7 @@ p.received_at=Date.now();
 flow.set("latest",p);
 msg.payload=p;
 return msg;'''
-add("validate", "function", "Validate and select source", 480, 140, [["split", "history"]], func=validate, outputs=1, noerr=0)
+add("validate", "function", "Validate and select source", 480, 140, [["split", "history", "influx", "alert_decision"]], func=validate, outputs=1, noerr=0)
 add("split", "function", "Dashboard and cloud fields", 670, 110, [["temp", "hum", "flame", "state", "recommend", "cloud"]], outputs=1, noerr=0,
     func=r'''const p=msg.payload;
 msg.temperature=p.temperature_c;
@@ -64,6 +64,50 @@ msg.payload="api_key="+encodeURIComponent(key)+
 return msg;''')
 add("http", "http request", "Public ThingSpeak channel", 1120, 290, [["cloud_debug"]], method="use", ret="obj", paytoqs="ignore", url="", tls="", persist=False, proxy="", insecureHTTPParser=False, authType="", senderr=False, headers=[])
 add("cloud_debug", "debug", "Cloud response/errors", 1320, 290, [[]], active=True, tosidebar=True, complete="payload", targetType="msg")
+
+add("influx", "function", "Build InfluxDB line protocol", 690, 340, [["influx_http"]], outputs=1, noerr=0,
+    func=r'''const p=msg.payload, token=env.get("INFLUX_TOKEN");
+if (!token) { node.warn("INFLUX_TOKEN is not configured"); return null; }
+const org=env.get("INFLUX_ORG")||"forestfire", bucket=env.get("INFLUX_BUCKET")||"telemetry";
+const fields=[];
+for (const [key,value] of Object.entries({temperature_c:p.temperature_c,humidity:p.humidity}))
+  if (typeof value==="number" && Number.isFinite(value)) fields.push(key+"="+value);
+fields.push("flame_ao="+Math.round(p.flame_ao)+"i");
+fields.push("flame="+p.flame,"motion="+p.motion,"muted="+p.muted);
+fields.push("servo_deg="+Math.round(p.servo_deg)+"i");
+fields.push("state_code="+({OFF:0,SAFE:1,WARNING:2,ALARM:3}[p.state])+"i");
+msg.method="POST";
+msg.url="http://influxdb:8086/api/v2/write?org="+encodeURIComponent(org)+"&bucket="+encodeURIComponent(bucket)+"&precision=ns";
+msg.headers={"Authorization":"Token "+token,"Content-Type":"text/plain; charset=utf-8"};
+msg.payload="forest_fire,source="+p.source+" "+fields.join(",");
+return msg;''')
+add("influx_http", "http request", "Write telemetry to InfluxDB", 960, 340, [["influx_result"]], method="use", ret="txt", paytoqs="ignore", url="", tls="", persist=False, proxy="", insecureHTTPParser=False, authType="", senderr=False, headers=[])
+add("influx_result", "function", "Check InfluxDB result", 1200, 340, [[]], outputs=1, noerr=0,
+    func='if(msg.statusCode!==204) node.warn("InfluxDB write failed: HTTP "+msg.statusCode+" "+String(msg.payload).slice(0,200));return null;')
+
+add("alert_decision", "function", "State-change LINE alert", 700, 390, [["line_build"]], outputs=1, noerr=0,
+    func=r'''const p=msg.payload, key="lastAlertState_"+p.source;
+const previous=flow.get(key);
+if (previous===p.state) return null;
+flow.set(key,p.state);
+if (p.state==="OFF" || (previous===undefined && p.state==="SAFE")) return null;
+const details="Temperature "+(p.temperature_c===null?"unavailable":p.temperature_c+" C")+
+  ", humidity "+(p.humidity===null?"unavailable":p.humidity+"%")+
+  ", flame "+(p.flame?"detected":"clear")+".";
+msg.payload="Forest Fire "+p.source.toUpperCase()+": "+p.state+". "+details+
+  (p.state==="ALARM"?" Inspect the site immediately.":
+   p.state==="WARNING"?" Check heat and dry conditions.":" Conditions recovered; continue monitoring.");
+return msg;''')
+add("line_build", "function", "Build LINE push request", 940, 390, [["line_http"]], outputs=1, noerr=0,
+    func=r'''const token=env.get("LINE_CHANNEL_ACCESS_TOKEN"), to=env.get("LINE_USER_ID");
+if (!token || !to) { node.warn("LINE credentials are not configured"); return null; }
+msg.method="POST";msg.url="https://api.line.me/v2/bot/message/push";
+msg.headers={"Authorization":"Bearer "+token,"Content-Type":"application/json"};
+msg.payload={to:to,messages:[{type:"text",text:String(msg.payload).slice(0,5000)}]};
+return msg;''')
+add("line_http", "http request", "Push LINE alert", 1140, 390, [["line_result"]], method="use", ret="obj", paytoqs="ignore", url="", tls="", persist=False, proxy="", insecureHTTPParser=False, authType="", senderr=False, headers=[])
+add("line_result", "function", "Check LINE response", 1330, 390, [[]], outputs=1, noerr=0,
+    func='if(msg.statusCode!==200) node.warn("LINE push failed: HTTP "+msg.statusCode+" "+JSON.stringify(msg.payload).slice(0,200));return null;')
 
 for id, label, command, y in [("mute","Mute buzzer","MUTE",370),("unmute","Unmute buzzer","UNMUTE",410),("teston","Alarm test ON","TEST_ON",450),("testoff","Alarm test OFF","TEST_OFF",490)]:
     nodes.append({"id":id,"type":"ui_button","z":flow,"name":label,"group":"ui_control","order":(y-330)//40,"width":"3","height":"1","passthru":False,"label":label,"tooltip":"","color":"","bgcolor":"","icon":"","payload":command,"payloadType":"str","topic":"","topicType":"str","x":160,"y":y,"wires":[["command_route"]]})

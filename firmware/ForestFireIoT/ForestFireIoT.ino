@@ -12,15 +12,14 @@
   Requirements covered
     1. Push switch : long press (1.5 s) = system ON / OFF (low-power idle),
                      short press = mute / unmute, double press = battery saver
-    2. Data        : TFT live display + microSD CSV log (+ Serial print)
+    2. Data        : MQTT/Node-RED + microSD CSV log (+ Serial print)
     3. Timestamps  : NTP over WiFi (UTC+7). Clock keeps running while OFF
     4. Technique   : Finite State Machine (OFF / SAFE / WARNING / ALARM)
                      + external interrupt on the button
     5. Servo       : points to a different angle for every state
 
   Libraries (Library Manager):
-    Adafruit GFX Library, Adafruit ILI9341, Adafruit BusIO,
-    DHT sensor library, Adafruit Unified Sensor, ESP32Servo
+    DHT sensor library, Adafruit Unified Sensor, ESP32Servo, PubSubClient
     (SD, SPI, WiFi come with the ESP32 core)
 */
 
@@ -28,8 +27,6 @@
 #include <time.h>
 #include <SPI.h>
 #include <SD.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_ILI9341.h>
 #include <DHT.h>
 #include <ESP32Servo.h>
 #include <PubSubClient.h>
@@ -66,12 +63,7 @@ const int SERVO_STEP_DEG = 3;    // smooth movement: degrees per step
 const unsigned long SERVO_STEP_MS = 15;
 
 // ---------------- Pin map ----------------
-#define TFT_CS      5
-#define TFT_DC      16      // module label: DC or RS   (RX2)
-#define TFT_RST     17      // module label: RESET      (TX2)
-                            // TFT SDI/MOSI = GPIO23, SCK = GPIO18, LED = 3V3
-                            // TFT SDO/MISO: leave unconnected
-#define SD_CS       22      // SD shares SCK 18 / MOSI 23 / MISO 19 with the TFT
+#define SD_CS       22      // SD SCK 18 / MOSI 23 / MISO 19
 #define DHT_PIN     4
 #define DHT_TYPE    DHT11
 #define FLAME_AO    34
@@ -99,8 +91,8 @@ const unsigned long ALARM_CLEAR_MS  = 3000;    // danger must be gone this long 
 const unsigned long DOUBLE_PRESS_MS = 400;     // 2 short presses within this = battery-saver toggle
 
 // Normal vs battery-saver timing (battery-saver only slows things down while SAFE)
-const unsigned long NORM_DHT_MS = 2000, NORM_SENSOR_MS = 100, NORM_DISPLAY_MS = 400;
-const unsigned long ECO_DHT_MS  = 5000, ECO_SENSOR_MS  = 300, ECO_DISPLAY_MS  = 1500, ECO_LOG_MS = 30000;
+const unsigned long NORM_DHT_MS = 2000, NORM_SENSOR_MS = 100;
+const unsigned long ECO_DHT_MS  = 5000, ECO_SENSOR_MS  = 300, ECO_LOG_MS = 30000;
 const unsigned long ECO_NAP_MS  = 100;         // idle delay between loops in battery-saver
 const unsigned long MQTT_RETRY_MS = 5000;
 const unsigned long TELEMETRY_MS = 5000;
@@ -109,7 +101,6 @@ const char* COMMAND_TOPIC = "forestfire/esp32/command";
 const char* STATUS_TOPIC = "forestfire/esp32/status";
 
 // ---------------- Objects ----------------
-Adafruit_ILI9341 tft(TFT_CS, TFT_DC, TFT_RST);
 DHT dht(DHT_PIN, DHT_TYPE);
 Servo stateServo;
 WiFiClient wifiClient;
@@ -120,7 +111,6 @@ bool remoteTest = false;
 // ---------------- Finite state machine ----------------
 enum SysState { SYS_OFF, SYS_SAFE, SYS_WARNING, SYS_ALARM };
 SysState sys = SYS_SAFE;
-SysState lastDrawn = (SysState)255;
 
 // Button event type. It must be declared up here, before the first function,
 // because the Arduino IDE auto-generates function prototypes at that point.
@@ -159,7 +149,7 @@ bool sdOk = false;
 bool timeValid = false;
 unsigned long lastSyncMs = 0;
 
-unsigned long tDht = 0, tSensors = 0, tDisplay = 0, tServo = 0, tLog = 0;
+unsigned long tDht = 0, tSensors = 0, tServo = 0, tLog = 0;
 
 // ---------------- Button (interrupt driven) ----------------
 volatile bool btnFlag = false;
@@ -395,76 +385,6 @@ void updateServo() {
   servoWriteDeg(servoAngle);
 }
 
-// ---------------- Display (320 x 240 landscape) ----------------
-uint16_t stateColor() {
-  if (sys == SYS_ALARM)   return ILI9341_RED;
-  if (sys == SYS_WARNING) return ILI9341_YELLOW;
-  return ILI9341_GREEN;
-}
-
-void drawHeader() {
-  uint16_t c = stateColor();
-  tft.fillRect(0, 0, 320, 36, c);
-  tft.setTextSize(3);
-  tft.setTextColor(ILI9341_BLACK, c);
-  tft.setCursor(10, 7);
-  if (sys == SYS_ALARM)        tft.print("FIRE ALARM!");
-  else if (sys == SYS_WARNING) tft.print("WARNING    ");
-  else                         tft.print("SAFE       ");
-  tft.setTextSize(2);                       // mode tag on the right side of the header
-  tft.setCursor(256, 12);
-  tft.print(batteryMode ? "BATT" : "    ");
-}
-
-void row(int y, const char* label, const char* value, uint16_t color) {
-  tft.setTextSize(2);
-  tft.setTextColor(ILI9341_CYAN, ILI9341_BLACK);
-  tft.setCursor(6, y);
-  tft.print(label);
-  char buf[24];
-  snprintf(buf, sizeof(buf), "%-15s", value);     // pad to erase old text
-  tft.setTextColor(color, ILI9341_BLACK);
-  tft.setCursor(130, y);
-  tft.print(buf);
-}
-
-void updateDisplay() {
-  if (sys != lastDrawn) { drawHeader(); lastDrawn = sys; }
-  char buf[28];
-
-  if (dhtOk) snprintf(buf, sizeof(buf), "%.1f C", temperature);
-  else       snprintf(buf, sizeof(buf), "sensor error");
-  row(46, "Temp", buf, temperature >= TEMP_WARN ? ILI9341_ORANGE : ILI9341_WHITE);
-
-  if (dhtOk) snprintf(buf, sizeof(buf), "%.0f %%", humidity);
-  else       snprintf(buf, sizeof(buf), "--");
-  row(70, "Humidity", buf, humidity <= HUM_DRY ? ILI9341_ORANGE : ILI9341_WHITE);
-
-  snprintf(buf, sizeof(buf), "%d %s", flameAnalog, flame ? "FIRE!" : "clear");
-  row(94, "Flame", buf, flame ? ILI9341_RED : ILI9341_GREEN);
-
-  if (millis() < PIR_WARMUP_MS)           snprintf(buf, sizeof(buf), "warming up");
-  else if (motion && sys == SYS_ALARM)    snprintf(buf, sizeof(buf), "PERSON NEAR!");
-  else if (motion)                        snprintf(buf, sizeof(buf), "detected");
-  else                                    snprintf(buf, sizeof(buf), "none");
-  row(118, "Motion", buf, motion ? ILI9341_ORANGE : ILI9341_WHITE);
-
-  snprintf(buf, sizeof(buf), "%d deg", servoAngle);
-  row(142, "Servo", buf, ILI9341_WHITE);
-
-  row(166, "Buzzer", muted ? "MUTED" : "armed", muted ? ILI9341_ORANGE : ILI9341_WHITE);
-
-  row(190, "Log", sdOk ? "SD card ok" : "serial only", sdOk ? ILI9341_GREEN : ILI9341_ORANGE);
-
-  char ts[24];
-  timestamp(ts, sizeof(ts));
-  snprintf(buf, sizeof(buf), "%-24s", ts);
-  tft.setTextSize(2);
-  tft.setTextColor(timeValid ? ILI9341_WHITE : ILI9341_ORANGE, ILI9341_BLACK);
-  tft.setCursor(6, 216);
-  tft.print(buf);
-}
-
 // ---------------- Sensors ----------------
 void readSensors() {
   flameAnalog = analogRead(FLAME_AO);
@@ -487,8 +407,6 @@ void readDHT() {
 
 // ---------------- Power on / off ----------------
 void startSystem() {
-  tft.sendCommand(ILI9341_DISPON);
-  tft.fillScreen(ILI9341_BLACK);
   servoAttached = false;
   servoAttachIfNeeded();                  // attaches and writes the current angle
   servoWriteDeg(servoAngle);              // starts at the OFF position, then glides to SAFE
@@ -496,17 +414,10 @@ void startSystem() {
   readSensors();
   muted = false;
   sys = SYS_SAFE;
-  lastDrawn = (SysState)255;
   logRow("SYSTEM_ON");
 }
 
 void powerOn() {
-  tft.sendCommand(ILI9341_DISPON);
-  tft.fillScreen(ILI9341_BLACK);
-  tft.setTextSize(2);
-  tft.setTextColor(ILI9341_WHITE);
-  tft.setCursor(20, 110);
-  tft.print("Starting...");
   if (!timeValid || millis() - lastSyncMs > RESYNC_MS) syncTime();
   startSystem();
 }
@@ -527,8 +438,6 @@ void powerOff() {
   delay(300);
   servoRelease();
 
-  tft.fillScreen(ILI9341_BLACK);
-  tft.sendCommand(ILI9341_DISPOFF);
   sys = SYS_OFF;
   publishTelemetry();
 }
@@ -604,17 +513,7 @@ void setup() {
   dht.begin();
   stateServo.setPeriodHertz(50);
 
-  tft.begin();
-  tft.setRotation(1);                 // landscape 320x240; try 3 if the image is upside down
-  tft.fillScreen(ILI9341_BLACK);
-
   setLED(0, 0, 1);                    // blue = booting
-  tft.setTextSize(2);
-  tft.setTextColor(ILI9341_WHITE);
-  tft.setCursor(20, 80);
-  tft.print("Forest Fire Detector");
-  tft.setCursor(20, 110);
-  tft.print("Syncing clock (NTP)...");
 
   syncTime();
   mqtt.setServer(MQTT_HOST, MQTT_PORT);
@@ -629,7 +528,6 @@ bool eco() { return batteryMode && sys == SYS_SAFE; }   // slow + idle only whil
 void toggleBatteryMode() {
   batteryMode = !batteryMode;
   if (!batteryMode) servoAttachIfNeeded();
-  lastDrawn = (SysState)255;                 // redraw header so the mode tag updates
   logRow(batteryMode ? "MODE_BATTERY_SAVER" : "MODE_NORMAL");
   tLog = millis();
 }
@@ -662,7 +560,6 @@ void loop() {
   updateServo();
   updateOutputs();
 
-  if (now - tDisplay >= (slow ? ECO_DISPLAY_MS : NORM_DISPLAY_MS)) { tDisplay = now; updateDisplay(); }
   if (now - tLog >= (slow ? ECO_LOG_MS : LOG_INTERVAL_MS))         { tLog = now; logRow("PERIODIC"); }
   if (now - lastTelemetry >= TELEMETRY_MS) { lastTelemetry = now; publishTelemetry(); }
 

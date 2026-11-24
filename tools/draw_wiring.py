@@ -24,7 +24,6 @@ left = [
  ('Active buzzer', ['+ → GPIO26','- → GND']),
 ]
 right = [
- ('ILI9341 TFT', ['VCC / LED → 3V3','GND → GND','SCK → GPIO18','MOSI → GPIO23','CS → GPIO5','DC → GPIO16','RST → GPIO17']),
  ('microSD reader', ['VCC → 3V3 / GND → GND','SCK → GPIO18','MOSI → GPIO23','MISO → GPIO19','CS → GPIO22']),
  ('RGB LED common cathode', ['R → 220Ω → GPIO25','G → 220Ω → GPIO33','B → 220Ω → GPIO32','common → GND']),
  ('Servo + external 5 V', ['signal → GPIO21','+ → regulated 5 V','- → shared GND']),
@@ -49,12 +48,12 @@ txt(630,540,'GPIO26  buzzer')
 txt(630,590,'GPIO18  SPI SCK (shared)')
 txt(630,640,'GPIO23  SPI MOSI (shared)')
 txt(630,690,'GPIO19  SD MISO')
-txt(630,740,'GPIO5 / 16 / 17  TFT')
+txt(630,740,'GPIO5 / 16 / 17  unused')
 txt(630,790,'GPIO22  SD CS')
 txt(630,840,'GPIO25 / 33 / 32  RGB')
 txt(630,890,'GPIO21  servo signal')
 rect(55,1080,1475,96)
 txt(78,1118,'Power rule: all grounds must connect. Servo +5 V comes from its own regulated supply, not ESP32 3V3.','head')
-txt(78,1150,'TFT and SD share SPI clock/data, but each has its own chip select. PIR was absent from the old Fritzing drawing.','note')
+txt(78,1150,'The TFT has been removed. The SD reader keeps its original SPI pins. PIR was absent from the old Fritzing drawing.','note')
 parts.append('</svg>')
 Path('docs/hardware_wiring.svg').write_text('\n'.join(parts),encoding='utf-8')

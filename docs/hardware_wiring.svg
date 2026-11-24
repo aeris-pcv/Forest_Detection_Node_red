@@ -35,37 +35,27 @@
 <text x="75" y="909" class="pin">+ → GPIO26</text>
 <text x="75" y="936" class="pin">- → GND</text>
 <path d="M485 900.0 H580" class="wire" stroke="#486581"/>
-<rect x="1100" y="125" width="430" height="255" rx="12" class="card"/>
-<text x="1118" y="157" class="head">ILI9341 TFT</text>
-<text x="1120" y="189" class="pin">VCC / LED → 3V3</text>
-<text x="1120" y="216" class="pin">GND → GND</text>
-<text x="1120" y="243" class="pin">SCK → GPIO18</text>
-<text x="1120" y="270" class="pin">MOSI → GPIO23</text>
-<text x="1120" y="297" class="pin">CS → GPIO5</text>
-<text x="1120" y="324" class="pin">DC → GPIO16</text>
-<text x="1120" y="351" class="pin">RST → GPIO17</text>
-<path d="M1000 252.5 H1100" class="wire" stroke="#486581"/>
-<rect x="1100" y="385" width="430" height="197" rx="12" class="card"/>
-<text x="1118" y="417" class="head">microSD reader</text>
-<text x="1120" y="449" class="pin">VCC → 3V3 / GND → GND</text>
-<text x="1120" y="476" class="pin">SCK → GPIO18</text>
-<text x="1120" y="503" class="pin">MOSI → GPIO23</text>
-<text x="1120" y="530" class="pin">MISO → GPIO19</text>
-<text x="1120" y="557" class="pin">CS → GPIO22</text>
-<path d="M1000 483.5 H1100" class="wire" stroke="#486581"/>
-<rect x="1100" y="645" width="430" height="168" rx="12" class="card"/>
-<text x="1118" y="677" class="head">RGB LED common cathode</text>
-<text x="1120" y="709" class="pin">R → 220Ω → GPIO25</text>
-<text x="1120" y="736" class="pin">G → 220Ω → GPIO33</text>
-<text x="1120" y="763" class="pin">B → 220Ω → GPIO32</text>
-<text x="1120" y="790" class="pin">common → GND</text>
-<path d="M1000 729.0 H1100" class="wire" stroke="#486581"/>
-<rect x="1100" y="905" width="430" height="139" rx="12" class="card"/>
-<text x="1118" y="937" class="head">Servo + external 5 V</text>
-<text x="1120" y="969" class="pin">signal → GPIO21</text>
-<text x="1120" y="996" class="pin">+ → regulated 5 V</text>
-<text x="1120" y="1023" class="pin">- → shared GND</text>
-<path d="M1000 974.5 H1100" class="wire" stroke="#486581"/>
+<rect x="1100" y="125" width="430" height="197" rx="12" class="card"/>
+<text x="1118" y="157" class="head">microSD reader</text>
+<text x="1120" y="189" class="pin">VCC → 3V3 / GND → GND</text>
+<text x="1120" y="216" class="pin">SCK → GPIO18</text>
+<text x="1120" y="243" class="pin">MOSI → GPIO23</text>
+<text x="1120" y="270" class="pin">MISO → GPIO19</text>
+<text x="1120" y="297" class="pin">CS → GPIO22</text>
+<path d="M1000 223.5 H1100" class="wire" stroke="#486581"/>
+<rect x="1100" y="385" width="430" height="168" rx="12" class="card"/>
+<text x="1118" y="417" class="head">RGB LED common cathode</text>
+<text x="1120" y="449" class="pin">R → 220Ω → GPIO25</text>
+<text x="1120" y="476" class="pin">G → 220Ω → GPIO33</text>
+<text x="1120" y="503" class="pin">B → 220Ω → GPIO32</text>
+<text x="1120" y="530" class="pin">common → GND</text>
+<path d="M1000 469.0 H1100" class="wire" stroke="#486581"/>
+<rect x="1100" y="645" width="430" height="139" rx="12" class="card"/>
+<text x="1118" y="677" class="head">Servo + external 5 V</text>
+<text x="1120" y="709" class="pin">signal → GPIO21</text>
+<text x="1120" y="736" class="pin">+ → regulated 5 V</text>
+<text x="1120" y="763" class="pin">- → shared GND</text>
+<path d="M1000 714.5 H1100" class="wire" stroke="#486581"/>
 <text x="630" y="290" class="pin">GPIO4   DHT11 DATA</text>
 <text x="630" y="340" class="pin">GPIO34  flame AO</text>
 <text x="630" y="390" class="pin">GPIO35  flame DO</text>
@@ -75,11 +65,11 @@
 <text x="630" y="590" class="pin">GPIO18  SPI SCK (shared)</text>
 <text x="630" y="640" class="pin">GPIO23  SPI MOSI (shared)</text>
 <text x="630" y="690" class="pin">GPIO19  SD MISO</text>
-<text x="630" y="740" class="pin">GPIO5 / 16 / 17  TFT</text>
+<text x="630" y="740" class="pin">GPIO5 / 16 / 17  unused</text>
 <text x="630" y="790" class="pin">GPIO22  SD CS</text>
 <text x="630" y="840" class="pin">GPIO25 / 33 / 32  RGB</text>
 <text x="630" y="890" class="pin">GPIO21  servo signal</text>
 <rect x="55" y="1080" width="1475" height="96" rx="12" class="card"/>
 <text x="78" y="1118" class="head">Power rule: all grounds must connect. Servo +5 V comes from its own regulated supply, not ESP32 3V3.</text>
-<text x="78" y="1150" class="note">TFT and SD share SPI clock/data, but each has its own chip select. PIR was absent from the old Fritzing drawing.</text>
+<text x="78" y="1150" class="note">The TFT has been removed. The SD reader keeps its original SPI pins. PIR was absent from the old Fritzing drawing.</text>
 </svg>

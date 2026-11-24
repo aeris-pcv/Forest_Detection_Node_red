@@ -1,157 +1,82 @@
 # Run the Forest Fire IoT project on Windows
 
-Follow these steps from the project root, the folder containing `docker-compose.yml`. Start with the digital twin, which needs no ESP32. Then connect and upload the hardware. Power the servo only after checking the wiring.
+This version has no TFT screen. The remaining ESP32 GPIO pins are unchanged. Node-RED shows live values, InfluxDB stores history, LINE sends state-change alerts, and ThingSpeak provides the public view-only page.
 
-## 1. Prepare the computer
+## 1 Prepare local settings
 
-Install and start Docker Desktop, Python 3 with `pip`, and Arduino IDE. The computer must have internet access for the first Docker image build and for ThingSpeak. The ESP32 and computer must be on the same local network; use a 2.4 GHz Wi-Fi network supported by the ESP32. Keep the computer awake while demonstrating the system.
-
-Open **PowerShell** in the project root. Check the tools:
-
-```powershell
-docker --version
-docker compose version
-python --version
-```
-
-If `docker` is unavailable, start Docker Desktop and reopen PowerShell. If `python` is unavailable, install Python and reopen PowerShell. If using the submitted ZIP, extract it first and open PowerShell in the extracted folder.
-
-## 2. Start the local MQTT and Node-RED services
-
-```powershell
-docker compose up --build -d
-docker compose ps
-```
-
-Both `mqtt` and `nodered` should show **running**. The first build downloads images and installs the Node-RED dashboard package, so it can take several minutes. Check startup messages if one container stops:
-
-```powershell
-docker compose logs --tail=80 mqtt
-docker compose logs --tail=80 nodered
-```
-
-Open these pages on the **same computer**:
-
-- Admin dashboard: `http://localhost:1880/ui`
-- Node-RED flow editor: `http://localhost:1880`
-
-The dashboard is local to this computer. It initially has no live measurements. Node-RED should show the **Forest fire fog** flow. Select **Use digital twin** on the dashboard.
-
-## 3. Run the ESP32-free digital twin
-
-In a second PowerShell window, opened in the project root, create a Python virtual environment and install its one dependency:
-
-```powershell
-python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r twin\requirements.txt
-```
-
-Run the complete scenario sequence:
-
-```powershell
-.\.venv\Scripts\python.exe twin\twin.py --scenario demo
-```
-
-The terminal prints JSON samples. On `http://localhost:1880/ui`, expect the following sequence over roughly 90 seconds:
-
-| Phase | Twin input | Expected dashboard state |
-|---|---|---|
-| Normal | 27.5 C, 65% humidity, no flame | SAFE |
-| Hot and dry | 39 C, 25% humidity, no flame | WARNING |
-| Flame / heat | 47 C, flame AO 1100, movement | ALARM, PERSON NEAR |
-| Clear | 28 C, 60% humidity, no flame | SAFE after about 3 seconds |
-
-The source/freshness text should show `twin / LIVE` while samples arrive. After the twin exits, it changes to `STALE OR OFFLINE` after about 15 seconds. The last reading may remain visible; freshness tells you whether it is current.
-
-For a longer single scene, run `--scenario safe`, `--scenario warning`, `--scenario alarm`, or `--scenario recovery` instead of `demo`. To test admin controls, run a scenario and press **Mute buzzer**, **Unmute buzzer**, **Alarm test ON**, then **Alarm test OFF**. The twin has no physical buzzer, but its `muted` and `state` fields change. The physical ESP32 responds with real actuators later.
-
-## 4. Configure the optional public ThingSpeak view
-
-Create a ThingSpeak channel with public read access and these eight fields: `Temperature C`, `Humidity %`, `Flame flag`, `Motion flag`, `State code`, `Flame AO`, `Servo degrees`, and `Muted flag`. Keep its **Write API Key** private. Copy the sample environment file and edit the new file:
+Install and start Docker Desktop, Python 3, and Arduino IDE. Open PowerShell in the folder containing `docker-compose.yml`:
 
 ```powershell
 Copy-Item .env.example .env
 notepad .env
 ```
 
-Set `THINGSPEAK_WRITE_KEY` to your channel's Write API Key, with no quotes or spaces around `=`. Restart Node-RED so it receives the new environment value:
+Replace `INFLUX_ADMIN_PASSWORD` and `INFLUX_TOKEN` with long unique values. `.env` is ignored by Git. Leave the LINE and ThingSpeak fields blank until those accounts are ready.
+
+## 2 Start the fog stack
+
+```powershell
+docker compose up --build -d
+docker compose ps
+```
+
+`mqtt`, `nodered`, and `influxdb` should be running. Open the private dashboard at `http://localhost:1880/ui`, the Node-RED editor at `http://localhost:1880`, and the InfluxDB UI at `http://localhost:8086`. Sign in to InfluxDB with the admin username and password from `.env`. For startup errors, run `docker compose logs --tail=80 nodered`, replacing `nodered` with another service name as needed.
+
+## 3 Run the digital twin
+
+In another PowerShell window in the same folder:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r twin\requirements.txt
+.\.venv\Scripts\python.exe twin\twin.py --scenario demo
+```
+
+Select **Use digital twin** on the dashboard. The 90-second demo moves through SAFE, WARNING, ALARM, and recovery to SAFE. The dashboard should show `twin / LIVE` while messages arrive and stale about 15 seconds after they stop. In InfluxDB, inspect the `telemetry` bucket for `forest_fire` records tagged `source=twin`.
+
+## 4 Enable LINE alerts
+
+Create a LINE Official Account and enable its Messaging API. Add the account as a friend on the receiving phone. Copy the channel access token and recipient user ID from the LINE Developers console into the ignored `.env` file as `LINE_CHANNEL_ACCESS_TOKEN` and `LINE_USER_ID`. Restart Node-RED:
 
 ```powershell
 docker compose up -d --force-recreate nodered
 ```
 
-Run the twin again. Open your channel's public view and allow at least 20 seconds for a point. The flow uploads no more often than every 16 seconds. State codes are `0=OFF`, `1=SAFE`, `2=WARNING`, `3=ALARM`. If no point appears, check that `.env` contains a real key and inspect Node-RED's **Cloud response/errors** debug output. Do not include `.env` in the submission ZIP.
+Run the twin demo again. The phone should receive one alert on transition to WARNING, another at ALARM, and a recovery message at SAFE. The flow does not send one message per sample. Check the Node-RED warnings if no message arrives. This uses outbound LINE push requests and needs no inbound webhook. Never commit the token or user ID or show them in screenshots.
 
-## 5. Connect the ESP32 hardware
+## 5 Enable the public ThingSpeak channel
 
-Use [the wiring chart](hardware_wiring.svg) and [pin table](HARDWARE_WIRING.md). The original Fritzing drawing omitted the PIR; connect its OUT pin to **GPIO27**. Connect all grounds together. The servo signal goes to GPIO21, but its positive supply should come from an external regulated 5 V source with common ground. Connect the TFT and separate SD reader to the shared SPI pins GPIO18 and GPIO23, with separate CS pins GPIO5 and GPIO22.
+Create a public read-only channel with eight fields: temperature C, humidity %, flame flag, motion flag, state code, flame AO, servo degrees, and muted flag. Put its private Write API Key in `THINGSPEAK_WRITE_KEY` in `.env`, then run `docker compose up -d --force-recreate nodered`. Run the twin again and allow at least 20 seconds for a public point. State codes are OFF=0, SAFE=1, WARNING=2, ALARM=3.
 
-Before applying power, compare every module's actual printed pin labels with the chart. Check that the RGB LED is **common cathode** and each color has its own 220 ohm resistor. Keep servo power disconnected for the first upload.
+## 6 Wire and upload the ESP32
 
-## 6. Set up Arduino IDE and upload
+Follow [the current wiring chart](hardware_wiring.svg) and [pin table](HARDWARE_WIRING.md). Do not connect the TFT. Keep DHT11 DATA on GPIO4, flame AO on GPIO34, PIR OUT on GPIO27, button on GPIO13, buzzer on GPIO26, RGB LED on GPIO25/33/32, servo signal on GPIO21, and SD CS on GPIO22. The SD reader uses SCK GPIO18, MOSI GPIO23, and MISO GPIO19. Join all grounds. Power the servo from an external regulated 5 V supply with shared ground.
 
-Install the ESP32 board package in Arduino IDE using the board manager URL from the supplied Project 1 README:
-
-```text
-https://espressif.github.io/arduino-esp32/package_esp32_index.json
-```
-
-Select the board matching the physical module (the supplied project targets **DOIT ESP32 DEVKIT V1**) and its serial port. Install these libraries in Library Manager: **Adafruit GFX Library**, **Adafruit ILI9341**, **Adafruit BusIO**, **DHT sensor library**, **Adafruit Unified Sensor**, **ESP32Servo**, and **PubSubClient**. WiFi, SPI, and SD come with the ESP32 board package.
-
-Find the computer's local IPv4 address:
-
-```powershell
-ipconfig
-```
-
-Create your local firmware settings from the example, then edit them:
+In Arduino IDE, install ESP32 board support and select the board matching your hardware (the supplied project uses DOIT ESP32 DEVKIT V1). Install DHT sensor library, Adafruit Unified Sensor, ESP32Servo, and PubSubClient. Screen libraries are no longer required. Find the computer's LAN IPv4 address with `ipconfig`. Then:
 
 ```powershell
 Copy-Item firmware\ForestFireIoT\secrets.example.h firmware\ForestFireIoT\secrets.h
 notepad firmware\ForestFireIoT\secrets.h
 ```
 
-Replace the placeholder Wi-Fi name, password, and `MQTT_HOST` with your computer's local IPv4 address, for example `192.168.1.10`. **Do not use `localhost`** as the MQTT host on the ESP32. Open `firmware\ForestFireIoT\ForestFireIoT.ino` in Arduino IDE, compile, and upload it. Open Serial Monitor at **115200 baud**. Git ignores `secrets.h`; commit only `secrets.example.h`.
+Set the 2.4 GHz Wi-Fi name/password and `MQTT_HOST` to the computer's LAN IPv4 address, not `localhost`. Upload `firmware\ForestFireIoT\ForestFireIoT.ino`. Open Serial Monitor at 115200 baud. Allow Docker MQTT on the trusted private network, TCP port 1883, if Windows Firewall prompts.
 
-Expected signs of life: the TFT displays the current state and measurements; Serial prints Wi-Fi/NTP status and CSV rows; after a few seconds Node-RED receives MQTT telemetry. If Windows Firewall prompts for Docker's network access, allow it on the trusted private network so the ESP32 can reach TCP port 1883.
+## 7 Check hardware and record the demo
 
-## 7. Verify physical dashboard and controls
+Select **Use ESP32** on the dashboard. Compare its values with Serial and InfluxDB; check `esp32 / LIVE`. Insert a FAT32 microSD card and confirm `fire_log.csv` is written. With servo power connected, check the SAFE pointer at 45 degrees. Press **Alarm test ON** and expect ALARM, red LED, buzzer, and servo around 135 degrees. Press **Mute buzzer** to silence only the sound. Press **Alarm test OFF** and allow three seconds to recover. LINE should alert on the state change. A short physical button press mutes, double press toggles battery saver, and long press turns the system on/off.
 
-On the dashboard, press **Use ESP32**. Within about five seconds it should show measured temperature, humidity, flame and state; freshness should show `esp32 / LIVE`. Compare readings with the TFT. With servo power connected, its pointer should move to SAFE at 45 degrees. Insert a FAT32 microSD card and check that `fire_log.csv` is created.
+Record two short videos showing WARNING/recovery and ALARM/control/recovery. Include the device, private dashboard, InfluxDB history, LINE phone alert, and public ThingSpeak page in the evidence. Do not use an uncontrolled flame. Fill the report and slide drafts with genuine results and screenshots.
 
-Test the controls in a safe setting:
-
-1. Press **Alarm test ON**. The ESP32 should enter ALARM; LED red, buzzer sounding, servo toward 135 degrees.
-2. Press **Mute buzzer**. Sound stops, but the ALARM state remains.
-3. Press **Unmute buzzer**, then **Alarm test OFF**. After three seconds of no real danger, it should return to SAFE or WARNING.
-4. Short press the physical button to mute/unmute; double press for battery saver; long press for system on/off.
-5. Unplug the ESP32 or disable its Wi-Fi briefly. The dashboard should become stale, while the local detector continues sensing and actuating. Reconnect and check it becomes live again.
-
-Do not use an uncontrolled flame to test the sensor. Calibrate the KY-026 analog threshold for the actual room lighting before claiming reliable flame detection.
-
-## 8. Capture the graded evidence
-
-Record two short videos: one showing WARNING then recovery, and one showing ALARM, admin mute, public view, and recovery. Capture the physical device and dashboard together where possible. Take screenshots of the Node-RED flow, private dashboard, public ThingSpeak channel, and the two results. Record the actual observed values and timestamps. Fill the supplied DOCX template with the diagrams, screenshots, group details, and results; export it and the approximately eight presentation slides to PDF. The [demo checklist](DEMO.md) lists the required evidence.
-
-## 9. Stop or restart
-
-To stop the twin, use `Ctrl+C` in its PowerShell window. To stop the containers without deleting their data:
-
-```powershell
-docker compose down
-```
-
-To run again later, open PowerShell in the project root and use `docker compose up -d`, then run the twin or turn on the ESP32. Keep `.env` and real Wi-Fi credentials out of the submitted ZIP.
-
-## Quick troubleshooting
+## Troubleshooting and stopping
 
 | Symptom | Check |
 |---|---|
-| Dashboard page does not open | `docker compose ps`; inspect `docker compose logs --tail=80 nodered` |
-| Twin prints connection refused | Mosquitto container and port 1883; `docker compose logs --tail=80 mqtt` |
-| Dashboard says stale | Correct source selected; twin still running or ESP32 powered and connected; wait one telemetry interval |
-| ESP32 has no cloud data | Computer LAN IPv4 in `secrets.h`, same network, firewall TCP 1883, Node-RED MQTT connected |
-| No ThingSpeak points | Correct Write API Key in `.env`; restarted Node-RED; allow 20 seconds; inspect debug panel |
-| Servo resets ESP32 | Use a suitable external 5 V supply and shared ground; check wiring |
-| SD does not log | FAT32 card, SD CS GPIO22, SPI MISO GPIO19, common ground |
-| Flame always active | Read AO in Serial diagnostics and recalibrate `FLAME_ANALOG_MAX`; leave DO disabled unless tested |
+| Dashboard unavailable | `docker compose ps`; `docker compose logs --tail=80 nodered` |
+| Twin connection refused | Mosquitto container and TCP port 1883 |
+| Dashboard stale | Selected source, twin still running or ESP32 online, LAN firewall |
+| No InfluxDB data | Influx token in `.env`, InfluxDB logs, Node-RED warnings |
+| No LINE alert | OA friendship, channel token and user ID, Node-RED restart and warnings |
+| No ThingSpeak point | Write key, public channel setup, 20-second wait, Node-RED debug |
+| Servo resets ESP32 | External regulated 5 V supply and shared ground |
+
+Use `Ctrl+C` to stop the twin and `docker compose down` to stop containers without deleting stored InfluxDB data.
