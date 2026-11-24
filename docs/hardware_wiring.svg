@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1210" viewBox="0 0 1600 1210">
+<rect width="100%" height="100%" fill="#f8fafc"/>
+<style>text{font-family:Arial,sans-serif;fill:#172033}.title{font-size:36px;font-weight:700}.sub{font-size:18px;fill:#526172}.head{font-size:22px;font-weight:700}.pin{font-size:16px}.note{font-size:16px;fill:#526172}.board{fill:#fff;stroke:#314a67;stroke-width:3}.card{fill:#fff;stroke:#b9c8d8;stroke-width:2}.wire{fill:none;stroke-width:3;stroke-linecap:round}</style>
+<text x="55" y="58" class="title">Forest Fire IoT - hardware wiring</text>
+<text x="55" y="88" class="sub">ESP32 DevKit V1 / DOIT  |  Project 2 pin map  |  separate SPI microSD reader</text>
+<rect x="580" y="125" width="420" height="930" rx="18" class="board"/>
+<text x="650" y="170" class="head">ESP32 DEVKIT V1</text>
+<text x="650" y="198" class="note">3V3 / GND / VIN rails</text>
+<rect x="55" y="125" width="430" height="139" rx="12" class="card"/>
+<text x="73" y="157" class="head">DHT11</text>
+<text x="75" y="189" class="pin">VCC → 3V3</text>
+<text x="75" y="216" class="pin">DATA → GPIO4</text>
+<text x="75" y="243" class="pin">GND → GND</text>
+<path d="M485 194.5 H580" class="wire" stroke="#486581"/>
+<rect x="55" y="305" width="430" height="168" rx="12" class="card"/>
+<text x="73" y="337" class="head">KY-026 flame</text>
+<text x="75" y="369" class="pin">VCC → 3V3</text>
+<text x="75" y="396" class="pin">AO → GPIO34</text>
+<text x="75" y="423" class="pin">DO → GPIO35 (optional)</text>
+<text x="75" y="450" class="pin">GND → GND</text>
+<path d="M485 389.0 H580" class="wire" stroke="#486581"/>
+<rect x="55" y="485" width="430" height="139" rx="12" class="card"/>
+<text x="73" y="517" class="head">HC-SR501 PIR</text>
+<text x="75" y="549" class="pin">VCC → 5V/VIN</text>
+<text x="75" y="576" class="pin">OUT → GPIO27</text>
+<text x="75" y="603" class="pin">GND → GND</text>
+<path d="M485 554.5 H580" class="wire" stroke="#486581"/>
+<rect x="55" y="665" width="430" height="110" rx="12" class="card"/>
+<text x="73" y="697" class="head">Push button</text>
+<text x="75" y="729" class="pin">contact → GPIO13</text>
+<text x="75" y="756" class="pin">other contact → GND</text>
+<path d="M485 720.0 H580" class="wire" stroke="#486581"/>
+<rect x="55" y="845" width="430" height="110" rx="12" class="card"/>
+<text x="73" y="877" class="head">Active buzzer</text>
+<text x="75" y="909" class="pin">+ → GPIO26</text>
+<text x="75" y="936" class="pin">- → GND</text>
+<path d="M485 900.0 H580" class="wire" stroke="#486581"/>
+<rect x="1100" y="125" width="430" height="255" rx="12" class="card"/>
+<text x="1118" y="157" class="head">ILI9341 TFT</text>
+<text x="1120" y="189" class="pin">VCC / LED → 3V3</text>
+<text x="1120" y="216" class="pin">GND → GND</text>
+<text x="1120" y="243" class="pin">SCK → GPIO18</text>
+<text x="1120" y="270" class="pin">MOSI → GPIO23</text>
+<text x="1120" y="297" class="pin">CS → GPIO5</text>
+<text x="1120" y="324" class="pin">DC → GPIO16</text>
+<text x="1120" y="351" class="pin">RST → GPIO17</text>
+<path d="M1000 252.5 H1100" class="wire" stroke="#486581"/>
+<rect x="1100" y="385" width="430" height="197" rx="12" class="card"/>
+<text x="1118" y="417" class="head">microSD reader</text>
+<text x="1120" y="449" class="pin">VCC → 3V3 / GND → GND</text>
+<text x="1120" y="476" class="pin">SCK → GPIO18</text>
+<text x="1120" y="503" class="pin">MOSI → GPIO23</text>
+<text x="1120" y="530" class="pin">MISO → GPIO19</text>
+<text x="1120" y="557" class="pin">CS → GPIO22</text>
+<path d="M1000 483.5 H1100" class="wire" stroke="#486581"/>
+<rect x="1100" y="645" width="430" height="168" rx="12" class="card"/>
+<text x="1118" y="677" class="head">RGB LED common cathode</text>
+<text x="1120" y="709" class="pin">R → 220Ω → GPIO25</text>
+<text x="1120" y="736" class="pin">G → 220Ω → GPIO33</text>
+<text x="1120" y="763" class="pin">B → 220Ω → GPIO32</text>
+<text x="1120" y="790" class="pin">common → GND</text>
+<path d="M1000 729.0 H1100" class="wire" stroke="#486581"/>
+<rect x="1100" y="905" width="430" height="139" rx="12" class="card"/>
+<text x="1118" y="937" class="head">Servo + external 5 V</text>
+<text x="1120" y="969" class="pin">signal → GPIO21</text>
+<text x="1120" y="996" class="pin">+ → regulated 5 V</text>
+<text x="1120" y="1023" class="pin">- → shared GND</text>
+<path d="M1000 974.5 H1100" class="wire" stroke="#486581"/>
+<text x="630" y="290" class="pin">GPIO4   DHT11 DATA</text>
+<text x="630" y="340" class="pin">GPIO34  flame AO</text>
+<text x="630" y="390" class="pin">GPIO35  flame DO</text>
+<text x="630" y="440" class="pin">GPIO27  PIR OUT</text>
+<text x="630" y="490" class="pin">GPIO13  button</text>
+<text x="630" y="540" class="pin">GPIO26  buzzer</text>
+<text x="630" y="590" class="pin">GPIO18  SPI SCK (shared)</text>
+<text x="630" y="640" class="pin">GPIO23  SPI MOSI (shared)</text>
+<text x="630" y="690" class="pin">GPIO19  SD MISO</text>
+<text x="630" y="740" class="pin">GPIO5 / 16 / 17  TFT</text>
+<text x="630" y="790" class="pin">GPIO22  SD CS</text>
+<text x="630" y="840" class="pin">GPIO25 / 33 / 32  RGB</text>
+<text x="630" y="890" class="pin">GPIO21  servo signal</text>
+<rect x="55" y="1080" width="1475" height="96" rx="12" class="card"/>
+<text x="78" y="1118" class="head">Power rule: all grounds must connect. Servo +5 V comes from its own regulated supply, not ESP32 3V3.</text>
+<text x="78" y="1150" class="note">TFT and SD share SPI clock/data, but each has its own chip select. PIR was absent from the old Fritzing drawing.</text>
+</svg>

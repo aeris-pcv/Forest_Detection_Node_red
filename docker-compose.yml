@@ -1,0 +1,25 @@
+services:
+  mqtt:
+    image: eclipse-mosquitto:2.0
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./fog/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mqtt_data:/mosquitto/data
+  nodered:
+    build: ./fog
+    restart: unless-stopped
+    depends_on:
+      - mqtt
+    ports:
+      - "127.0.0.1:1880:1880"
+    environment:
+      - TZ=Asia/Bangkok
+      - THINGSPEAK_WRITE_KEY=${THINGSPEAK_WRITE_KEY:-}
+    volumes:
+      - ./fog/flows.json:/data/flows.json:ro
+      - nodered_data:/data
+volumes:
+  mqtt_data:
+  nodered_data:

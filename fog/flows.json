@@ -1,0 +1,559 @@
+[
+  {
+    "id": "fire",
+    "type": "tab",
+    "label": "Forest fire fog",
+    "disabled": false,
+    "info": "ESP32 and digital twin share one MQTT schema."
+  },
+  {
+    "id": "broker",
+    "type": "mqtt-broker",
+    "name": "Docker Mosquitto",
+    "broker": "mqtt",
+    "port": "1883",
+    "clientid": "nodered-fog",
+    "autoConnect": true,
+    "usetls": false,
+    "protocolVersion": "4",
+    "keepalive": "60",
+    "cleansession": true
+  },
+  {
+    "id": "ui_tab",
+    "type": "ui_tab",
+    "name": "Fire monitor",
+    "icon": "dashboard",
+    "order": 1
+  },
+  {
+    "id": "ui_sensors",
+    "type": "ui_group",
+    "name": "Sensors",
+    "tab": "ui_tab",
+    "order": 1,
+    "disp": true,
+    "width": "12",
+    "collapse": false
+  },
+  {
+    "id": "ui_control",
+    "type": "ui_group",
+    "name": "Admin controls",
+    "tab": "ui_tab",
+    "order": 2,
+    "disp": true,
+    "width": "12",
+    "collapse": false
+  },
+  {
+    "id": "in_esp32",
+    "type": "mqtt in",
+    "z": "fire",
+    "name": "esp32 telemetry",
+    "x": 120,
+    "y": 100,
+    "wires": [
+      [
+        "parse"
+      ]
+    ],
+    "topic": "forestfire/esp32/telemetry",
+    "qos": "0",
+    "datatype": "auto",
+    "broker": "broker",
+    "nl": false,
+    "rap": true,
+    "rh": 0,
+    "inputs": 0
+  },
+  {
+    "id": "in_twin",
+    "type": "mqtt in",
+    "z": "fire",
+    "name": "twin telemetry",
+    "x": 120,
+    "y": 180,
+    "wires": [
+      [
+        "parse"
+      ]
+    ],
+    "topic": "forestfire/twin/telemetry",
+    "qos": "0",
+    "datatype": "auto",
+    "broker": "broker",
+    "nl": false,
+    "rap": true,
+    "rh": 0,
+    "inputs": 0
+  },
+  {
+    "id": "parse",
+    "type": "json",
+    "z": "fire",
+    "name": "Parse JSON",
+    "x": 300,
+    "y": 140,
+    "wires": [
+      [
+        "validate"
+      ]
+    ],
+    "property": "payload",
+    "action": "obj",
+    "pretty": false
+  },
+  {
+    "id": "validate",
+    "type": "function",
+    "z": "fire",
+    "name": "Validate and select source",
+    "x": 480,
+    "y": 140,
+    "wires": [
+      [
+        "split",
+        "history"
+      ]
+    ],
+    "func": "const p=msg.payload;\nif (!p || ![\"esp32\",\"twin\"].includes(p.source) ||\n    ![\"OFF\",\"SAFE\",\"WARNING\",\"ALARM\"].includes(p.state) ||\n    typeof p.flame!==\"boolean\" || typeof p.motion!==\"boolean\" ||\n    (p.temperature_c!==null && typeof p.temperature_c!==\"number\") ||\n    (p.humidity!==null && typeof p.humidity!==\"number\")) return null;\nconst s=flow.get(\"selectedSource\") || \"twin\";\nif (p.source!==s) return null;\np.received_at=Date.now();\nflow.set(\"latest\",p);\nmsg.payload=p;\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0
+  },
+  {
+    "id": "split",
+    "type": "function",
+    "z": "fire",
+    "name": "Dashboard and cloud fields",
+    "x": 670,
+    "y": 110,
+    "wires": [
+      [
+        "temp",
+        "hum",
+        "flame",
+        "state",
+        "recommend",
+        "cloud"
+      ]
+    ],
+    "outputs": 1,
+    "noerr": 0,
+    "func": "const p=msg.payload;\nmsg.temperature=p.temperature_c;\nmsg.humidity=p.humidity;\nmsg.flame_label=p.flame ? \"FLAME DETECTED\" : \"clear\";\nmsg.state_label=p.state + (p.motion && p.state===\"ALARM\" ? \" - PERSON NEAR\" : \"\");\nmsg.recommendation=p.state===\"ALARM\" ? \"Alarm active. Inspect site; mute only after checking.\" :\n  p.state===\"WARNING\" ? \"Elevated risk. Check heat and dry conditions.\" : \"Conditions normal. Keep monitoring.\";\nreturn msg;"
+  },
+  {
+    "id": "temp",
+    "type": "ui_text",
+    "z": "fire",
+    "group": "ui_sensors",
+    "order": 1,
+    "width": "6",
+    "height": "1",
+    "name": "Temperature C",
+    "label": "Temperature C",
+    "format": "{{msg.temperature}}",
+    "layout": "row-spread",
+    "x": 900,
+    "y": 70,
+    "wires": []
+  },
+  {
+    "id": "hum",
+    "type": "ui_text",
+    "z": "fire",
+    "group": "ui_sensors",
+    "order": 2,
+    "width": "6",
+    "height": "1",
+    "name": "Humidity %",
+    "label": "Humidity %",
+    "format": "{{msg.humidity}}",
+    "layout": "row-spread",
+    "x": 900,
+    "y": 110,
+    "wires": []
+  },
+  {
+    "id": "flame",
+    "type": "ui_text",
+    "z": "fire",
+    "group": "ui_sensors",
+    "order": 3,
+    "width": "12",
+    "height": "1",
+    "name": "Flame",
+    "label": "Flame",
+    "format": "{{msg.flame_label}}",
+    "layout": "row-spread",
+    "x": 900,
+    "y": 150,
+    "wires": []
+  },
+  {
+    "id": "state",
+    "type": "ui_text",
+    "z": "fire",
+    "group": "ui_sensors",
+    "order": 4,
+    "width": "12",
+    "height": "1",
+    "name": "State",
+    "label": "State",
+    "format": "{{msg.state_label}}",
+    "layout": "row-spread",
+    "x": 900,
+    "y": 190,
+    "wires": []
+  },
+  {
+    "id": "recommend",
+    "type": "ui_text",
+    "z": "fire",
+    "group": "ui_sensors",
+    "order": 5,
+    "width": "12",
+    "height": "1",
+    "name": "Recommendation",
+    "label": "Recommendation",
+    "format": "{{msg.recommendation}}",
+    "layout": "row-spread",
+    "x": 900,
+    "y": 230,
+    "wires": []
+  },
+  {
+    "id": "history",
+    "type": "function",
+    "z": "fire",
+    "name": "Store bounded history",
+    "x": 690,
+    "y": 290,
+    "wires": [
+      []
+    ],
+    "outputs": 1,
+    "noerr": 0,
+    "func": "let h=flow.get(\"history\")||[];h.push(msg.payload);if(h.length>720)h=h.slice(-720);flow.set(\"history\",h);return null;"
+  },
+  {
+    "id": "cloud",
+    "type": "function",
+    "z": "fire",
+    "name": "ThingSpeak rate limit",
+    "x": 910,
+    "y": 290,
+    "wires": [
+      [
+        "http"
+      ]
+    ],
+    "outputs": 1,
+    "noerr": 0,
+    "func": "const p=msg.payload;\nconst key=env.get(\"THINGSPEAK_WRITE_KEY\");\nif (!key) return null;\nconst now=Date.now();\nif (now-(flow.get(\"lastCloud\")||0)<16000) return null;\nflow.set(\"lastCloud\",now);\nmsg.method=\"POST\";msg.url=\"https://api.thingspeak.com/update.json\";\nmsg.headers={\"Content-Type\":\"application/x-www-form-urlencoded\"};\nmsg.payload=\"api_key=\"+encodeURIComponent(key)+\n \"&field1=\"+encodeURIComponent(p.temperature_c??\"\")+\n \"&field2=\"+encodeURIComponent(p.humidity??\"\")+\n \"&field3=\"+Number(p.flame)+\"&field4=\"+Number(p.motion)+\n \"&field5=\"+({OFF:0,SAFE:1,WARNING:2,ALARM:3}[p.state])+ \n \"&field6=\"+p.flame_ao+\"&field7=\"+p.servo_deg+\"&field8=\"+Number(p.muted);\nreturn msg;"
+  },
+  {
+    "id": "http",
+    "type": "http request",
+    "z": "fire",
+    "name": "Public ThingSpeak channel",
+    "x": 1120,
+    "y": 290,
+    "wires": [
+      [
+        "cloud_debug"
+      ]
+    ],
+    "method": "use",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": []
+  },
+  {
+    "id": "cloud_debug",
+    "type": "debug",
+    "z": "fire",
+    "name": "Cloud response/errors",
+    "x": 1320,
+    "y": 290,
+    "wires": [
+      []
+    ],
+    "active": true,
+    "tosidebar": true,
+    "complete": "payload",
+    "targetType": "msg"
+  },
+  {
+    "id": "mute",
+    "type": "ui_button",
+    "z": "fire",
+    "name": "Mute buzzer",
+    "group": "ui_control",
+    "order": 1,
+    "width": "3",
+    "height": "1",
+    "passthru": false,
+    "label": "Mute buzzer",
+    "tooltip": "",
+    "color": "",
+    "bgcolor": "",
+    "icon": "",
+    "payload": "MUTE",
+    "payloadType": "str",
+    "topic": "",
+    "topicType": "str",
+    "x": 160,
+    "y": 370,
+    "wires": [
+      [
+        "command_route"
+      ]
+    ]
+  },
+  {
+    "id": "unmute",
+    "type": "ui_button",
+    "z": "fire",
+    "name": "Unmute buzzer",
+    "group": "ui_control",
+    "order": 2,
+    "width": "3",
+    "height": "1",
+    "passthru": false,
+    "label": "Unmute buzzer",
+    "tooltip": "",
+    "color": "",
+    "bgcolor": "",
+    "icon": "",
+    "payload": "UNMUTE",
+    "payloadType": "str",
+    "topic": "",
+    "topicType": "str",
+    "x": 160,
+    "y": 410,
+    "wires": [
+      [
+        "command_route"
+      ]
+    ]
+  },
+  {
+    "id": "teston",
+    "type": "ui_button",
+    "z": "fire",
+    "name": "Alarm test ON",
+    "group": "ui_control",
+    "order": 3,
+    "width": "3",
+    "height": "1",
+    "passthru": false,
+    "label": "Alarm test ON",
+    "tooltip": "",
+    "color": "",
+    "bgcolor": "",
+    "icon": "",
+    "payload": "TEST_ON",
+    "payloadType": "str",
+    "topic": "",
+    "topicType": "str",
+    "x": 160,
+    "y": 450,
+    "wires": [
+      [
+        "command_route"
+      ]
+    ]
+  },
+  {
+    "id": "testoff",
+    "type": "ui_button",
+    "z": "fire",
+    "name": "Alarm test OFF",
+    "group": "ui_control",
+    "order": 4,
+    "width": "3",
+    "height": "1",
+    "passthru": false,
+    "label": "Alarm test OFF",
+    "tooltip": "",
+    "color": "",
+    "bgcolor": "",
+    "icon": "",
+    "payload": "TEST_OFF",
+    "payloadType": "str",
+    "topic": "",
+    "topicType": "str",
+    "x": 160,
+    "y": 490,
+    "wires": [
+      [
+        "command_route"
+      ]
+    ]
+  },
+  {
+    "id": "command_route",
+    "type": "function",
+    "z": "fire",
+    "name": "Route to selected source",
+    "x": 410,
+    "y": 430,
+    "wires": [
+      [
+        "mqtt_out"
+      ]
+    ],
+    "outputs": 1,
+    "noerr": 0,
+    "func": "msg.topic=\"forestfire/\"+(flow.get(\"selectedSource\")||\"twin\")+\"/command\";return msg;"
+  },
+  {
+    "id": "mqtt_out",
+    "type": "mqtt out",
+    "z": "fire",
+    "name": "Commands",
+    "x": 650,
+    "y": 430,
+    "wires": [
+      []
+    ],
+    "topic": "",
+    "qos": "0",
+    "retain": "false",
+    "broker": "broker",
+    "inputs": 1
+  },
+  {
+    "id": "select_twin",
+    "type": "ui_button",
+    "z": "fire",
+    "name": "Use digital twin",
+    "group": "ui_control",
+    "order": 2,
+    "width": "6",
+    "height": "1",
+    "passthru": false,
+    "label": "Use digital twin",
+    "tooltip": "",
+    "color": "",
+    "bgcolor": "",
+    "icon": "",
+    "payload": "twin",
+    "payloadType": "str",
+    "topic": "",
+    "topicType": "str",
+    "x": 170,
+    "y": 540,
+    "wires": [
+      [
+        "select_source"
+      ]
+    ]
+  },
+  {
+    "id": "select_esp32",
+    "type": "ui_button",
+    "z": "fire",
+    "name": "Use ESP32",
+    "group": "ui_control",
+    "order": 3,
+    "width": "6",
+    "height": "1",
+    "passthru": false,
+    "label": "Use ESP32",
+    "tooltip": "",
+    "color": "",
+    "bgcolor": "",
+    "icon": "",
+    "payload": "esp32",
+    "payloadType": "str",
+    "topic": "",
+    "topicType": "str",
+    "x": 170,
+    "y": 580,
+    "wires": [
+      [
+        "select_source"
+      ]
+    ]
+  },
+  {
+    "id": "select_source",
+    "type": "function",
+    "z": "fire",
+    "name": "Select monitored source",
+    "x": 430,
+    "y": 560,
+    "wires": [
+      []
+    ],
+    "outputs": 1,
+    "noerr": 0,
+    "func": "flow.set(\"selectedSource\",msg.payload);return null;"
+  },
+  {
+    "id": "status_text",
+    "type": "ui_text",
+    "z": "fire",
+    "group": "ui_sensors",
+    "order": 6,
+    "width": "12",
+    "height": "1",
+    "name": "Connection",
+    "label": "Source / freshness",
+    "format": "{{msg.payload}}",
+    "layout": "row-spread",
+    "x": 690,
+    "y": 650,
+    "wires": []
+  },
+  {
+    "id": "tick",
+    "type": "inject",
+    "z": "fire",
+    "name": "Every 5 seconds",
+    "x": 140,
+    "y": 650,
+    "wires": [
+      [
+        "freshness"
+      ]
+    ],
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "5",
+    "crontab": "",
+    "once": true,
+    "onceDelay": "1",
+    "topic": "",
+    "payload": "",
+    "payloadType": "date"
+  },
+  {
+    "id": "freshness",
+    "type": "function",
+    "z": "fire",
+    "name": "Mark stale data",
+    "x": 420,
+    "y": 650,
+    "wires": [
+      [
+        "status_text"
+      ]
+    ],
+    "outputs": 1,
+    "noerr": 0,
+    "func": "const p=flow.get(\"latest\"),s=flow.get(\"selectedSource\")||\"twin\";msg.payload=s+\" / \"+(!p||p.source!==s||Date.now()-p.received_at>15000?\"STALE OR OFFLINE\":\"LIVE\");return msg;"
+  }
+]
