@@ -8,6 +8,8 @@ If the board logs `ALARM` with `flame_ao=0` or the DHT readings are unavailable,
 
 To choose a flame threshold for your actual module and lighting, upload [`firmware/FlameCalibration/FlameCalibration.ino`](firmware/FlameCalibration/FlameCalibration.ino). Use Serial Monitor at 115200 baud, send `b` in normal lighting, then `f` at a supervised test source. Copy the suggested value into `FLAME_ANALOG_MAX` in the main firmware only after both ranges are clearly separated.
 
+To check the microSD reader alone, upload [`firmware/SDCardTest/SDCardTest.ino`](firmware/SDCardTest/SDCardTest.ino). It uses the same GPIO18/19/23/22 wiring as the main sketch, appends one line to `/sd_test.txt`, reads it back, and prints PASS or FAIL at 115200 baud.
+
 ## Quick start
 
 1. Install Docker Desktop. Copy `.env.example` to `.env` and set a strong InfluxDB password and token. Run `docker compose up --build -d` from this directory.
