@@ -252,18 +252,29 @@ void timestamp(char* buf, size_t n) {
 // ---------------- Logging ----------------
 void initSD() {
 #if USE_SD
-  if (SD.begin(SD_CS)) {
-    sdOk = true;
-    if (!SD.exists(LOG_FILE)) {
-      File f = SD.open(LOG_FILE, FILE_WRITE);
-      if (f) {
-        f.println("timestamp,event,state,temp_c,humidity,flame_ao,flame,motion,servo_deg");
-        f.close();
-      }
-    }
-  } else {
-    Serial.println("SD.begin FAILED - check wiring (MISO = GPIO 19), power, FAT32");
+  sdOk = false;
+  if (!SD.begin(SD_CS) || SD.cardType() == CARD_NONE) {
+    Serial.println("SD: NOT CONNECTED - check CS=22, SCK=18, MISO=19, MOSI=23, power, and FAT32");
+    return;
   }
+  if (!SD.exists(LOG_FILE)) {
+    File f = SD.open(LOG_FILE, FILE_WRITE);
+    if (!f) {
+      Serial.println("SD: card detected, but could not create /fire_log.csv");
+      return;
+    }
+    if (!f.println("timestamp,event,state,temp_c,humidity,flame_ao,flame,motion,servo_deg")) {
+      f.close();
+      Serial.println("SD: card detected, but writing the CSV header failed");
+      return;
+    }
+    f.close();
+  }
+  sdOk = true;
+  Serial.printf("SD: CONNECTED | Card size: %llu MB | Logging to %s\n",
+                SD.cardSize() / (1024ULL * 1024ULL), LOG_FILE);
+#else
+  Serial.println("SD: disabled in firmware settings");
 #endif
 }
 
@@ -290,23 +301,31 @@ void logRow(const char* event) {
     strcpy(tempDisplay, "unavailable");
     strcpy(humidityDisplay, "unavailable");
   }
+  const char* sdStatus = "disabled";
+#if USE_SD
+  sdStatus = "not available";
+  if (sdOk) {
+    File f = SD.open(LOG_FILE, FILE_APPEND);
+    if (f) {
+      size_t written = f.println(line);
+      f.close();
+      if (written) sdStatus = "saved";
+      else sdOk = false;
+    } else {
+      sdOk = false;
+    }
+  }
+#endif
   // Human-readable Serial Monitor output; keep the SD file as machine-readable CSV.
   Serial.printf("Time: %s | Event: %s | State: %s | Temperature: %s | "
                 "Humidity: %s | Flame AO: %d | Flame: %s | "
-                "PIR motion: %s | Servo: %d deg | Buzzer: %s | Mode: %s\n",
+                "PIR motion: %s | Servo: %d deg | Buzzer: %s | Mode: %s | SD: %s\n",
                 ts, event, stateName(sys),
                 tempDisplay, humidityDisplay,
                 flameAnalog, flame ? "DETECTED" : "clear",
                 motion ? "detected" : "none", servoAngle,
                 muted ? "muted" : "armed",
-                batteryMode ? "battery saver" : "normal");
-#if USE_SD
-  if (sdOk) {
-    File f = SD.open(LOG_FILE, FILE_APPEND);
-    if (f) { f.println(line); f.close(); }
-    else   { sdOk = false; }
-  }
-#endif
+                batteryMode ? "battery saver" : "normal", sdStatus);
 }
 
 // Only three exact commands are accepted. A remote test may raise the alarm,
