@@ -1,0 +1,128 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" role="img" aria-labelledby="title desc">
+  <title id="title">Forest Fire IoT system infographic flowchart</title>
+  <desc id="desc">Sensors feed ESP32 decisions and local outputs. ESP32 or a digital twin sends MQTT telemetry to Mosquitto and Node-RED, which feeds a dashboard, InfluxDB, LINE alerts, and ThingSpeak.</desc>
+  <defs>
+    <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#0b1730"/><stop offset="1" stop-color="#102e40"/></linearGradient>
+    <linearGradient id="head" x2="1"><stop stop-color="#14b8a6"/><stop offset="1" stop-color="#38bdf8"/></linearGradient>
+    <filter id="shadow" x="-20%" y="-30%" width="150%" height="170%"><feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#030b18" flood-opacity=".3"/></filter>
+    <marker id="arrow" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="10" markerHeight="10" orient="auto"><path d="M1 1 L11 6 L1 11 Z" fill="#67e8f9"/></marker>
+    <style>
+      text{font-family:Arial,Helvetica,sans-serif}
+      .title{font-size:49px;font-weight:800;fill:#fff;letter-spacing:-1px}
+      .subtitle{font-size:21px;fill:#b9d6e4}
+      .step{font-size:16px;font-weight:800;letter-spacing:2px;fill:#0b3c49}
+      .cardtitle{font-size:30px;font-weight:800;fill:#15283f}
+      .body{font-size:22px;fill:#31465b}
+      .small{font-size:18px;fill:#476075}
+      .caps{font-size:17px;font-weight:800;letter-spacing:1px}
+      .line{fill:none;stroke:#67e8f9;stroke-width:6;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#arrow)}
+    </style>
+  </defs>
+  <rect width="1600" height="1000" fill="url(#bg)"/>
+  <circle cx="1500" cy="40" r="280" fill="#38bdf8" opacity=".06"/>
+  <circle cx="100" cy="1020" r="330" fill="#14b8a6" opacity=".07"/>
+
+  <rect x="60" y="45" width="145" height="34" rx="17" fill="#164e63"/>
+  <text x="132" y="68" text-anchor="middle" font-size="16" font-weight="800" fill="#99f6e4">PROJECT 2</text>
+  <text class="title" x="60" y="137">Forest Fire IoT · System Flow</text>
+  <text class="subtitle" x="60" y="175">Local detection continues without Wi-Fi. Connected data powers monitoring, history and alerts.</text>
+
+  <!-- Physical sensing -->
+  <rect x="60" y="215" width="360" height="315" rx="26" fill="#f8fbff" filter="url(#shadow)"/>
+  <rect x="60" y="215" width="360" height="58" rx="26" fill="#d5f4ee"/>
+  <rect x="60" y="245" width="360" height="28" fill="#d5f4ee"/>
+  <circle cx="99" cy="244" r="18" fill="#14b8a6"/>
+  <text x="99" y="251" text-anchor="middle" font-size="20" font-weight="800" fill="#fff">1</text>
+  <text class="step" x="128" y="251">SENSE</text>
+  <text class="cardtitle" x="88" y="321">ESP32 inputs</text>
+  <circle cx="93" cy="363" r="5" fill="#14b8a6"/><text class="body" x="110" y="371">DHT11 · heat + humidity</text>
+  <circle cx="93" cy="404" r="5" fill="#14b8a6"/><text class="body" x="110" y="412">Flame sensor · calibrated</text>
+  <circle cx="93" cy="445" r="5" fill="#14b8a6"/><text class="body" x="110" y="453">PIR · nearby movement</text>
+  <circle cx="93" cy="486" r="5" fill="#14b8a6"/><text class="body" x="110" y="494">Button · local control</text>
+
+  <!-- Decisions -->
+  <rect x="470" y="215" width="575" height="315" rx="26" fill="#f8fbff" filter="url(#shadow)"/>
+  <rect x="470" y="215" width="575" height="58" rx="26" fill="#dbeafe"/>
+  <rect x="470" y="245" width="575" height="28" fill="#dbeafe"/>
+  <circle cx="509" cy="244" r="18" fill="#3b82f6"/>
+  <text x="509" y="251" text-anchor="middle" font-size="20" font-weight="800" fill="#fff">2</text>
+  <text class="step" x="538" y="251" fill="#1e40af">DECIDE ON DEVICE</text>
+  <text class="cardtitle" x="498" y="320">Local state machine</text>
+  <rect x="498" y="343" width="520" height="48" rx="12" fill="#fee2e2"/>
+  <text class="caps" x="515" y="373" fill="#b91c1c">ALARM</text>
+  <text class="small" x="613" y="373">Flame, heat ≥ 45°C, or test ON</text>
+  <rect x="498" y="399" width="520" height="48" rx="12" fill="#fef3c7"/>
+  <text class="caps" x="515" y="429" fill="#a16207">WARNING</text>
+  <text class="small" x="630" y="429">Heat ≥ 38°C, or hot + dry</text>
+  <rect x="498" y="455" width="520" height="48" rx="12" fill="#dcfce7"/>
+  <text class="caps" x="515" y="485" fill="#15803d">SAFE</text>
+  <text class="small" x="613" y="485">Normal readings; 3 s alarm recovery</text>
+
+  <!-- Local output -->
+  <rect x="1095" y="215" width="445" height="315" rx="26" fill="#f8fbff" filter="url(#shadow)"/>
+  <rect x="1095" y="215" width="445" height="58" rx="26" fill="#ede9fe"/>
+  <rect x="1095" y="245" width="445" height="28" fill="#ede9fe"/>
+  <circle cx="1134" cy="244" r="18" fill="#8b5cf6"/>
+  <text x="1134" y="251" text-anchor="middle" font-size="20" font-weight="800" fill="#fff">3</text>
+  <text class="step" x="1163" y="251" fill="#5b21b6">ACT LOCALLY</text>
+  <text class="cardtitle" x="1123" y="321">Immediate response</text>
+  <circle cx="1128" cy="363" r="5" fill="#8b5cf6"/><text class="body" x="1145" y="371">RGB LED + buzzer</text>
+  <circle cx="1128" cy="404" r="5" fill="#8b5cf6"/><text class="body" x="1145" y="412">Servo points to state</text>
+  <circle cx="1128" cy="445" r="5" fill="#8b5cf6"/><text class="body" x="1145" y="453">Serial + microSD CSV</text>
+  <text class="small" x="1123" y="495">Works even if the network is down</text>
+
+  <path class="line" d="M420 371 H463"/>
+  <path class="line" d="M1045 371 H1088"/>
+  <path class="line" d="M757 530 V555 H238 V583"/>
+
+  <!-- Broker -->
+  <rect x="60" y="590" width="360" height="302" rx="26" fill="#f8fbff" filter="url(#shadow)"/>
+  <rect x="60" y="590" width="360" height="58" rx="26" fill="#ccfbf1"/>
+  <rect x="60" y="620" width="360" height="28" fill="#ccfbf1"/>
+  <circle cx="99" cy="619" r="18" fill="#0d9488"/>
+  <text x="99" y="626" text-anchor="middle" font-size="20" font-weight="800" fill="#fff">4</text>
+  <text class="step" x="128" y="626">TRANSPORT</text>
+  <text class="cardtitle" x="88" y="696">Mosquitto MQTT</text>
+  <text class="body" x="88" y="739">ESP32 JSON every 5 s</text>
+  <text class="body" x="88" y="776">over local Wi-Fi</text>
+  <rect x="88" y="812" width="300" height="49" rx="13" fill="#ecfeff" stroke="#99e7e3"/>
+  <text class="small" x="106" y="843">Digital twin can also publish</text>
+
+  <!-- Fog -->
+  <rect x="470" y="590" width="390" height="302" rx="26" fill="#f8fbff" filter="url(#shadow)"/>
+  <rect x="470" y="590" width="390" height="58" rx="26" fill="#dbeafe"/>
+  <rect x="470" y="620" width="390" height="28" fill="#dbeafe"/>
+  <circle cx="509" cy="619" r="18" fill="#3b82f6"/>
+  <text x="509" y="626" text-anchor="middle" font-size="20" font-weight="800" fill="#fff">5</text>
+  <text class="step" x="538" y="626" fill="#1e40af">FOG PROCESSING</text>
+  <text class="cardtitle" x="498" y="696">Node-RED</text>
+  <text class="body" x="498" y="739">Validates each reading</text>
+  <text class="body" x="498" y="776">Selects ESP32 or twin</text>
+  <text class="body" x="498" y="813">Routes controls + alerts</text>
+  <text class="small" x="498" y="856">Private dashboard on localhost</text>
+  <path class="line" d="M420 741 H463"/>
+  <path class="line" d="M860 741 H908"/>
+
+  <!-- Services -->
+  <rect x="920" y="590" width="620" height="302" rx="26" fill="#f8fbff" filter="url(#shadow)"/>
+  <rect x="920" y="590" width="620" height="58" rx="26" fill="#ffedd5"/>
+  <rect x="920" y="620" width="620" height="28" fill="#ffedd5"/>
+  <circle cx="959" cy="619" r="18" fill="#f97316"/>
+  <text x="959" y="626" text-anchor="middle" font-size="20" font-weight="800" fill="#fff">6</text>
+  <text class="step" x="988" y="626" fill="#9a3412">DISPLAY + SAVE + NOTIFY</text>
+  <rect x="945" y="669" width="272" height="88" rx="15" fill="#eff6ff"/>
+  <text class="caps" x="961" y="701" fill="#1d4ed8">DASHBOARD</text>
+  <text class="small" x="961" y="732">Live values + controls</text>
+  <rect x="1232" y="669" width="282" height="88" rx="15" fill="#ecfdf5"/>
+  <text class="caps" x="1248" y="701" fill="#047857">INFLUXDB</text>
+  <text class="small" x="1248" y="732">Historical readings</text>
+  <rect x="945" y="771" width="272" height="88" rx="15" fill="#fff1f2"/>
+  <text class="caps" x="961" y="803" fill="#be123c">LINE</text>
+  <text class="small" x="961" y="834">State-change push alert</text>
+  <rect x="1232" y="771" width="282" height="88" rx="15" fill="#fffbeb"/>
+  <text class="caps" x="1248" y="803" fill="#b45309">THINGSPEAK</text>
+  <text class="small" x="1248" y="834">Public charts · ≥ 16 s</text>
+
+  <rect x="60" y="925" width="1480" height="48" rx="16" fill="#17445b"/>
+  <text x="800" y="956" text-anchor="middle" font-size="20" font-weight="700" fill="#d6f7fa">Local sensing and alarm remain active offline  •  MQTT and cloud features resume when connected</text>
+</svg>
