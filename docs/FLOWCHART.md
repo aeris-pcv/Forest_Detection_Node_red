@@ -1,10 +1,18 @@
 # Forest Fire IoT flowchart
 
+## Conventional flowchart diagram
+
+![Forest Fire IoT flowchart with decision diamonds and Yes/No arrows](system_flowchart_diagram.svg)
+
+[Download the flowchart PNG](system_flowchart_diagram.png) for slides or the report.
+
+## System infographic
+
 ![Forest Fire IoT infographic flowchart](flowchart_infographic.svg)
 
 [Download the PNG version](flowchart_infographic.png) for slides or the report.
 
-This flowchart follows the firmware and Node-RED flow. GitHub renders the Mermaid diagram below directly in this page.
+Both diagrams follow the firmware and Node-RED flow. GitHub renders the editable Mermaid version below directly in this page.
 
 ```mermaid
 flowchart TD

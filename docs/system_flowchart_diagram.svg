@@ -1,0 +1,124 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="2240" viewBox="0 0 1200 2240" role="img" aria-labelledby="title desc">
+  <title id="title">Forest Fire IoT conventional flowchart diagram</title>
+  <desc id="desc">A conventional flowchart with start, process boxes, decision diamonds, labeled yes and no arrows, local alarm states, an offline loop and MQTT to Node-RED services.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="11" markerHeight="11" orient="auto"><path d="M1 1 L11 6 L1 11 Z" fill="#29485a"/></marker>
+    <style>
+      text{font-family:Arial,Helvetica,sans-serif;text-anchor:middle;fill:#172d3d}
+      .title{font-size:42px;font-weight:800;fill:#102b3b}
+      .sub{font-size:19px;fill:#506879}
+      .label{font-size:23px;font-weight:700}
+      .detail{font-size:18px}
+      .edge{font-size:19px;font-weight:800;fill:#315267}
+      .line{fill:none;stroke:#29485a;stroke-width:4;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#arrow)}
+      .plain{fill:none;stroke:#29485a;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+      .process{fill:#e9f5fb;stroke:#3e8eb6;stroke-width:3}
+      .decision{fill:#fff6d7;stroke:#d5a42c;stroke-width:3}
+      .safe{fill:#def8e8;stroke:#35a667;stroke-width:3}
+      .warn{fill:#fff0cf;stroke:#e1a43a;stroke-width:3}
+      .alarm{fill:#ffe0df;stroke:#e05a57;stroke-width:3}
+      .terminal{fill:#d9f4f1;stroke:#1f9d94;stroke-width:3}
+    </style>
+  </defs>
+  <rect width="1200" height="2240" fill="#f7fafc"/>
+  <text class="title" x="600" y="68">Forest Fire IoT · Flowchart Diagram</text>
+  <text class="sub" x="600" y="102">Decision diamonds show the local ESP32 logic; network services run after each reading.</text>
+
+  <!-- Begin and sample -->
+  <rect class="terminal" x="460" y="135" width="280" height="65" rx="33"/>
+  <text class="label" x="600" y="176">START / power on</text>
+  <rect class="process" x="350" y="245" width="500" height="82" rx="16"/>
+  <text class="label" x="600" y="278">Initialize ESP32, sensors, SD card,</text>
+  <text class="label" x="600" y="307">Wi-Fi and time</text>
+  <rect class="process" x="350" y="370" width="500" height="82" rx="16"/>
+  <text class="label" x="600" y="404">Read flame, temperature, humidity,</text>
+  <text class="label" x="600" y="433">PIR and button</text>
+  <path class="line" d="M600 200 V239"/>
+  <path class="line" d="M600 327 V364"/>
+
+  <!-- Power decision -->
+  <polygon class="decision" points="600,490 775,575 600,660 425,575"/>
+  <text class="label" x="600" y="572">Long press</text>
+  <text class="label" x="600" y="600">while ON?</text>
+  <path class="line" d="M600 452 V484"/>
+  <rect class="process" x="850" y="528" width="280" height="94" rx="16"/>
+  <text class="label" x="990" y="563">OFF: park servo,</text>
+  <text class="label" x="990" y="594">wait for long press</text>
+  <path class="line" d="M775 575 H844"/>
+  <text class="edge" x="807" y="553">YES</text>
+  <path class="line" d="M990 528 V411 H856"/>
+  <text class="detail" x="996" y="474">long press to resume</text>
+  <path class="line" d="M600 660 V716"/>
+  <text class="edge" x="635" y="690">NO</text>
+
+  <!-- Danger decision -->
+  <polygon class="decision" points="600,722 775,817 600,912 425,817"/>
+  <text class="label" x="600" y="802">Flame, ≥ 45°C,</text>
+  <text class="label" x="600" y="832">or remote test?</text>
+  <rect class="alarm" x="850" y="769" width="280" height="96" rx="16"/>
+  <text class="label" x="990" y="806">ALARM</text>
+  <text class="detail" x="990" y="836">Red LED; buzzer if armed</text>
+  <path class="line" d="M775 817 H844"/>
+  <text class="edge" x="807" y="794">YES</text>
+  <path class="line" d="M600 912 V973"/>
+  <text class="edge" x="635" y="946">NO</text>
+
+  <!-- Three-second recovery -->
+  <polygon class="decision" points="600,980 775,1065 600,1150 425,1065"/>
+  <text class="label" x="600" y="1054">Still in 3 s</text>
+  <text class="label" x="600" y="1084">ALARM hold?</text>
+  <path class="plain" d="M775 1065 H1160 V817 H1130"/>
+  <path class="line" d="M1139 817 H1131"/>
+  <text class="edge" x="808" y="1040">YES</text>
+  <path class="line" d="M600 1150 V1204"/>
+  <text class="edge" x="635" y="1180">NO</text>
+
+  <!-- Warning decision -->
+  <polygon class="decision" points="600,1210 775,1300 600,1390 425,1300"/>
+  <text class="label" x="600" y="1285">≥ 38°C, or ≥ 33°C</text>
+  <text class="label" x="600" y="1315">and RH ≤ 30%?</text>
+  <rect class="safe" x="75" y="1252" width="280" height="96" rx="16"/>
+  <text class="label" x="215" y="1289">SAFE</text>
+  <text class="detail" x="215" y="1319">Normal outputs</text>
+  <rect class="warn" x="850" y="1252" width="280" height="96" rx="16"/>
+  <text class="label" x="990" y="1289">WARNING</text>
+  <text class="detail" x="990" y="1319">Warning outputs</text>
+  <path class="line" d="M425 1300 H361"/>
+  <text class="edge" x="391" y="1277">NO</text>
+  <path class="line" d="M775 1300 H844"/>
+  <text class="edge" x="808" y="1277">YES</text>
+
+  <!-- Merge all states -->
+  <path class="plain" d="M215 1348 V1440 H350"/>
+  <path class="plain" d="M990 1348 V1440 H850"/>
+  <path class="plain" d="M1130 817 H1170 V1440 H850"/>
+  <rect class="process" x="350" y="1420" width="500" height="100" rx="16"/>
+  <text class="label" x="600" y="1458">Set LED, buzzer and servo</text>
+  <text class="detail" x="600" y="1491">Print Serial; save CSV to SD if available</text>
+
+  <!-- Network decision and offline loop -->
+  <polygon class="decision" points="600,1558 775,1640 600,1722 425,1640"/>
+  <text class="label" x="600" y="1628">Wi-Fi and MQTT</text>
+  <text class="label" x="600" y="1658">connected?</text>
+  <path class="line" d="M600 1520 V1552"/>
+  <path class="plain" d="M425 1640 H37 V411 H344"/>
+  <path class="line" d="M324 411 H344"/>
+  <text class="edge" x="382" y="1614">NO</text>
+  <text class="detail" x="139" y="1608">Continue locally</text>
+  <path class="line" d="M600 1722 V1761"/>
+  <text class="edge" x="638" y="1745">YES</text>
+
+  <!-- Network processing -->
+  <rect class="process" x="350" y="1767" width="500" height="86" rx="16"/>
+  <text class="label" x="600" y="1800">Publish JSON every 5 seconds</text>
+  <text class="detail" x="600" y="1830">ESP32 → Mosquitto MQTT broker</text>
+  <rect class="process" x="350" y="1897" width="500" height="82" rx="16"/>
+  <text class="label" x="600" y="1931">Node-RED validates and selects</text>
+  <text class="label" x="600" y="1961">ESP32 or digital twin</text>
+  <path class="line" d="M600 1853 V1891"/>
+  <rect class="process" x="105" y="2023" width="990" height="112" rx="16"/>
+  <text class="label" x="600" y="2058">Dashboard + InfluxDB history + ThingSpeak charts</text>
+  <text class="detail" x="600" y="2091">LINE push only on WARNING, ALARM or recovery state change</text>
+  <path class="line" d="M600 1979 V2017"/>
+  <text class="detail" x="277" y="2185">The monitoring loop repeats while the ESP32 is powered.</text>
+</svg>
