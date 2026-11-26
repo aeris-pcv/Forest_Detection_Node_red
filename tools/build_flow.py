@@ -19,7 +19,18 @@ nodes.append({
         "lightTheme": {"default": "#1976d2", "baseColor": "#1976d2", "baseFont": "Arial,sans-serif", "edited": False, "reset": False},
         "darkTheme": {"default": "#097479", "baseColor": "#097479", "baseFont": "Arial,sans-serif", "edited": False},
         "customTheme": {"name": "Forest Fire", "default": "#1976d2", "baseColor": "#1976d2", "baseFont": "Arial,sans-serif"},
-        "themeState": {},
+        "themeState": {
+            "base-font": {"value": "Arial,sans-serif"},
+            "base-color": {"value": "#1976d2"},
+            "page-backgroundColor": {"value": "#fafafa"},
+            "page-titlebar-backgroundColor": {"value": "#1976d2"},
+            "page-sidebar-backgroundColor": {"value": "#ffffff"},
+            "group-backgroundColor": {"value": "#ffffff"},
+            "group-textColor": {"value": "#000000"},
+            "group-borderColor": {"value": "#ffffff"},
+            "widget-textColor": {"value": "#111111"},
+            "widget-backgroundColor": {"value": "#1976d2"}
+        },
         "angularTheme": {"primary": "indigo", "accents": "blue", "warn": "red", "background": "grey", "palette": "light"}
     },
     "site": {

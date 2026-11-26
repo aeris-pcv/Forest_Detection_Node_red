@@ -50,7 +50,38 @@
         "baseColor": "#1976d2",
         "baseFont": "Arial,sans-serif"
       },
-      "themeState": {},
+      "themeState": {
+        "base-font": {
+          "value": "Arial,sans-serif"
+        },
+        "base-color": {
+          "value": "#1976d2"
+        },
+        "page-backgroundColor": {
+          "value": "#fafafa"
+        },
+        "page-titlebar-backgroundColor": {
+          "value": "#1976d2"
+        },
+        "page-sidebar-backgroundColor": {
+          "value": "#ffffff"
+        },
+        "group-backgroundColor": {
+          "value": "#ffffff"
+        },
+        "group-textColor": {
+          "value": "#000000"
+        },
+        "group-borderColor": {
+          "value": "#ffffff"
+        },
+        "widget-textColor": {
+          "value": "#111111"
+        },
+        "widget-backgroundColor": {
+          "value": "#1976d2"
+        }
+      },
       "angularTheme": {
         "primary": "indigo",
         "accents": "blue",
