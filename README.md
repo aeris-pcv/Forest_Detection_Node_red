@@ -4,6 +4,8 @@ Project 2 extension of the supplied ESP32 forest fire detector. The same telemet
 
 For complete Windows instructions, follow [`docs/RUN_STEP_BY_STEP.md`](docs/RUN_STEP_BY_STEP.md).
 
+See the [project flowchart](docs/FLOWCHART.md) for the device decisions and data path through MQTT, Node-RED, InfluxDB, LINE and ThingSpeak.
+
 If the board logs `ALARM` with `flame_ao=0` or the DHT readings are unavailable, upload [`firmware/SensorWiringTest/SensorWiringTest.ino`](firmware/SensorWiringTest/SensorWiringTest.ino). It prints raw sensor readings without starting Wi-Fi or actuators.
 
 To choose a flame threshold for your actual module and lighting, upload [`firmware/FlameCalibration/FlameCalibration.ino`](firmware/FlameCalibration/FlameCalibration.ino). Use Serial Monitor at 115200 baud, send `b` in normal lighting, then `f` at a supervised test source. Copy the suggested value into `FLAME_ANALOG_MAX` in the main firmware only after both ranges are clearly separated.
