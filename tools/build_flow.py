@@ -12,6 +12,22 @@ def add(id, type, name, x, y, wires=None, **kw):
 nodes.append({"id": flow, "type": "tab", "label": "Forest fire fog", "disabled": False, "info": "ESP32 and digital twin share one MQTT schema."})
 nodes.append({"id": "broker", "type": "mqtt-broker", "name": "Docker Mosquitto", "broker": "mqtt", "port": "1883", "clientid": "nodered-fog", "autoConnect": True, "usetls": False, "protocolVersion": "4", "keepalive": "60", "cleansession": True})
 nodes.append({"id": "ui_tab", "type": "ui_tab", "name": "Fire monitor", "icon": "dashboard", "order": 1})
+nodes.append({
+    "id": "ui_base", "type": "ui_base",
+    "theme": {
+        "name": "theme-light",
+        "lightTheme": {"default": "#1976d2", "baseColor": "#1976d2", "baseFont": "Arial,sans-serif", "edited": False, "reset": False},
+        "darkTheme": {"default": "#097479", "baseColor": "#097479", "baseFont": "Arial,sans-serif", "edited": False},
+        "customTheme": {"name": "Forest Fire", "default": "#1976d2", "baseColor": "#1976d2", "baseFont": "Arial,sans-serif"},
+        "themeState": {},
+        "angularTheme": {"primary": "indigo", "accents": "blue", "warn": "red", "background": "grey", "palette": "light"}
+    },
+    "site": {
+        "name": "Forest Fire Monitor", "hideToolbar": "false", "allowSwipe": "false",
+        "lockMenu": "false", "allowTempTheme": "true", "dateFormat": "DD/MM/YYYY",
+        "sizes": {"sx": 48, "sy": 48, "gx": 6, "gy": 6, "cx": 6, "cy": 6, "px": 0, "py": 0}
+    }
+})
 nodes.append({"id": "ui_sensors", "type": "ui_group", "name": "Sensors", "tab": "ui_tab", "order": 1, "disp": True, "width": "12", "collapse": False})
 nodes.append({"id": "ui_control", "type": "ui_group", "name": "Admin controls", "tab": "ui_tab", "order": 2, "disp": True, "width": "12", "collapse": False})
 
