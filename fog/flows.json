@@ -20,14 +20,14 @@
     "cleansession": true
   },
   {
-    "id": "ui_tab",
+    "id": "dashboard_tab_config",
     "type": "ui_tab",
     "name": "Fire monitor",
     "icon": "dashboard",
     "order": 1
   },
   {
-    "id": "ui_base",
+    "id": "dashboard_base_config",
     "type": "ui_base",
     "theme": {
       "name": "theme-light",
@@ -113,7 +113,7 @@
     "id": "ui_sensors",
     "type": "ui_group",
     "name": "Sensors",
-    "tab": "ui_tab",
+    "tab": "dashboard_tab_config",
     "order": 1,
     "disp": true,
     "width": "12",
@@ -123,7 +123,7 @@
     "id": "ui_control",
     "type": "ui_group",
     "name": "Admin controls",
-    "tab": "ui_tab",
+    "tab": "dashboard_tab_config",
     "order": 2,
     "disp": true,
     "width": "12",
