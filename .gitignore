@@ -19,6 +19,18 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 .uv-cache/
+.docqa/
+
+# Local report and earlier assignment material
+docs/Project_Documentation_*.docx
+docs/~$*.docx
+ForestFireDetection/
+GradingRubric.pdf
+Project2_Spec.pdf
+Template_Project2__GroupID.docx
+PLAN.md
+docs/REPORT.md
+docs/SLIDES.md
 
 # Local runtime data
 fog/node_modules/

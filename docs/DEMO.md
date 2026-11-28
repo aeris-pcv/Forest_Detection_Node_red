@@ -2,7 +2,7 @@
 
 ## Preflight
 
-1. Photograph the assembled hardware and confirm pin connections against the original Fritzing schematic. Calibrate KY-026 AO in normal lighting and under a safe simulated source; adjust `FLAME_ANALOG_MAX` if necessary.
+1. Photograph the assembled hardware and confirm pin connections against `docs/HARDWARE_WIRING.md`. Calibrate KY-026 AO in normal lighting and under a safe simulated source; adjust `FLAME_ANALOG_MAX` if necessary.
 2. Run Docker Compose. In the Node-RED editor, check for connected MQTT nodes and no flow errors. Open the private dashboard.
 3. Run the twin with `--scenario demo`. Capture its dashboard in SAFE, WARNING, ALARM, and recovery. Confirm InfluxDB history and LINE state-change alerts. Press mute and alarm test buttons; confirm twin messages change.
 4. Create a public ThingSpeak channel, set field names, enable public read access, configure `.env`, and verify new points appear. Record the channel URL.
@@ -16,6 +16,6 @@
 
 ## Report and slides
 
-Fill the supplied DOCX template with the content from `docs/REPORT.md`, original circuit and FSM images, a Node-RED flow screenshot, private dashboard screenshots, public channel screenshot, measured scenario results, group names/photos, and version history. Export the final report to PDF.
+Complete the project documentation DOCX locally with the current circuit and FSM diagrams, a Node-RED flow screenshot, private dashboard screenshots, public channel screenshot, measured scenario results, group names/photos, and version history. Export the final report to PDF.
 
 Prepare about eight slides: title/team; problem and objectives; physical circuit; architecture/protocol; FSM and analytics; private and public dashboards; two scenario results with video links; conclusions and limitations. Export to PDF. Submit that PDF, the report PDF, and a ZIP of `firmware`, `fog`, `twin`, `docker-compose.yml`, `.env.example`, and documentation. Exclude real credentials and `.env`.

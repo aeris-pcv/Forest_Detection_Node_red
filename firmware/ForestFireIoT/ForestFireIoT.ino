@@ -81,7 +81,7 @@ const float TEMP_WARN        = 38.0;
 const float TEMP_ALARM       = 45.0;
 const float TEMP_DRY_WARN    = 33.0;
 const float HUM_DRY          = 30.0;
-const int   FLAME_ANALOG_MAX = 2000;         // AO below this = flame. Calibrate!
+const int   FLAME_ANALOG_MAX = 1000;         // AO below this = flame. Calibrate!
 const unsigned long PIR_WARMUP_MS    = 30000;
 const unsigned long LONG_PRESS_MS    = 1500;
 const unsigned long LOG_INTERVAL_MS  = 5000;
